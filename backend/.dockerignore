@@ -1,0 +1,10 @@
+# Không đưa bí mật và rác vào image (COPY . . trong Dockerfile sẽ lấy mọi thứ không bị loại)
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.vscode/
+.git/
+*.sqlite3

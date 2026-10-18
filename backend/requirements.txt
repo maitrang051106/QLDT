@@ -1,4 +1,11 @@
-sanic>=24.6,<26
-PyJWT>=2.10,<3
-bcrypt>=4,<5
-mysql-connector-python>=9,<10
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30
+SQLAlchemy>=2.0.30,<2.1
+alembic>=1.13
+pydantic>=2.7,<3.0
+pydantic-settings>=2.3
+PyJWT>=2.8
+bcrypt>=4.1
+PyMySQL>=1.1
+cryptography>=42        # PyMySQL cần cho MySQL 8 (caching_sha2_password)
+tzdata>=2024.1          # Windows không có sẵn CSDL múi giờ cho zoneinfo

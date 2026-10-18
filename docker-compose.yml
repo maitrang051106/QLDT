@@ -1,0 +1,54 @@
+# Chạy toàn bộ hệ thống từ thư mục gốc repo:   docker compose up --build
+#   Gateway:   http://localhost:8080        (điểm vào duy nhất)
+#   Swagger:   http://localhost:8080/api/docs
+#
+# Chế độ dev "API chạy trong VS Code": chỉ chạy db + gateway, trỏ gateway về máy host
+#   docker compose up -d db gateway   với   BACKEND_URL=http://host.docker.internal:8000
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: course_registration
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+      MYSQL_ROOT_PASSWORD: root
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    ports: ["3306:3306"]
+    volumes: ["dbdata:/var/lib/mysql"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u$$MYSQL_USER $$MYSQL_DATABASE -e 'SELECT 1' > /dev/null 2>&1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      ENVIRONMENT: dev
+      DATABASE_URL: mysql+pymysql://app:app@db:3306/course_registration?charset=utf8mb4
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-doi-khi-trien-khai-that-1234567890}
+    depends_on:
+      db: { condition: service_healthy }
+    expose: ["8000"]          # chỉ mạng nội bộ; bên ngoài đi qua gateway
+
+  gateway:
+    build: ./gateway
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://backend:8000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://frontend:80}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # để gateway gọi được uvicorn chạy trên máy host (Linux)
+    ports: ["8080:80"]
+    depends_on:
+      backend: { condition: service_healthy }
+
+  # frontend:                # nhóm front-end bổ sung khi sẵn sàng; gateway đã định tuyến "/" tới đây
+  #   build: ./frontend
+  #   expose: ["80"]
+
+volumes:
+  dbdata:

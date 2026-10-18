@@ -1,1 +1,0 @@
-"""Shared backend security utilities."""

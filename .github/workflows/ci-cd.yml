@@ -1,0 +1,199 @@
+# ============================================================================
+# CI/CD – Hệ thống Quản lý & Đăng ký Học phần
+#
+#   PR / push  ->  backend (ruff, pytest, migration)  ->  integration (compose + smoke test)
+#   push main hoặc tag v*  ->  publish (đẩy image lên GHCR)  ->  deploy (tùy chọn, SSH)
+#
+# Deploy mặc định TẮT. Bật bằng: Settings > Secrets and variables > Actions > Variables:
+#   DEPLOY_ENABLED=true
+# và các secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY  (xem docker-compose.prod.yml)
+# GITHUB_TOKEN của job deploy cần quyền packages:read; package GHCR phải cấp quyền truy cập repo.
+# ============================================================================
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # --------------------------------------------------------------------------
+  backend:
+    name: Backend – lint, test, migration
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: course_registration
+          MYSQL_USER: app
+          MYSQL_PASSWORD: app
+          MYSQL_ROOT_PASSWORD: root
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="MYSQL_PWD=app mysql -h 127.0.0.1 -uapp course_registration -e 'SELECT 1' > /dev/null 2>&1"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+    env:
+      DATABASE_URL: mysql+pymysql://app:app@127.0.0.1:3306/course_registration?charset=utf8mb4
+      JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-1234
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Cài thư viện
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Kiểm tra định dạng (ruff format)
+        run: ruff format --check .
+
+      - name: Test (pytest, SQLite trong bộ nhớ)
+        run: pytest
+
+      # Kiểm tra trên MySQL thật: migration chạy được và KHÔNG lệch so với entity.
+      # Thất bại ở đây thường nghĩa là sửa entity mà quên sinh migration:
+      #   alembic revision --autogenerate -m "mô tả"
+      - name: Migration chạy được trên MySQL
+        run: alembic upgrade head
+
+      - name: Migration khớp với entity
+        run: alembic check
+
+  # --------------------------------------------------------------------------
+  integration:
+    name: Tích hợp – compose + gateway + smoke test
+    needs: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image và khởi động database
+        run: |
+          docker compose build backend gateway
+          docker compose up -d --wait --wait-timeout 240 db
+
+      - name: Migration trước khi khởi động backend
+        run: |
+          docker compose run --rm backend alembic upgrade head
+          docker compose up -d --wait --wait-timeout 240 backend gateway
+
+      - name: Smoke test qua gateway
+        run: python3 gateway/smoke_test.py http://localhost:8080
+
+      - name: Log container (khi lỗi)
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Dọn dẹp
+        if: always()
+        run: docker compose down -v
+
+  # --------------------------------------------------------------------------
+  publish:
+    name: Đẩy image lên GHCR (${{ matrix.service }})
+    needs: integration
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [backend, gateway]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tên image (GHCR yêu cầu chữ thường)
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.service }}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # --------------------------------------------------------------------------
+  deploy:
+    name: Triển khai lên server (SSH)
+    needs: publish
+    if: github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Tính tên image và tag (khớp type=sha của bước publish, dạng sha-7 ký tự)"
+        run: |
+          echo "REGISTRY_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=sha-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Chép docker-compose.prod.yml lên server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: docker-compose.prod.yml
+          target: course-registration
+
+      - name: Migrate trước, triển khai và kiểm tra sức khỏe
+        uses: appleboy/ssh-action@v1
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: REGISTRY_IMAGE,IMAGE_TAG,GHCR_USER,GHCR_TOKEN
+          script: |
+            set -e
+            cd course-registration
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --wait db
+            docker compose -f docker-compose.prod.yml run --rm backend alembic upgrade head
+            docker compose -f docker-compose.prod.yml up -d --wait backend gateway
+            docker compose -f docker-compose.prod.yml exec -T gateway wget -qO- http://127.0.0.1/health/backend
