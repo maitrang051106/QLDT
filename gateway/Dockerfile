@@ -1,4 +1,4 @@
-FROM nginx:1.29-alpine
+FROM nginx:1.31-alpine
 
 # tzdata: để $time_iso8601 ra +07:00 đúng quy ước ngày giờ của API
 RUN apk add --no-cache tzdata
