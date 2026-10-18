@@ -1,0 +1,132 @@
+# =====================================================================
+# API Gateway – điểm vào duy nhất của hệ thống
+#   /api/*   -> Backend (FastAPI)
+#   /health  -> trạng thái của chính gateway   (/health/backend: chuyển tiếp tới backend)
+#   /*       -> Front-end
+# Các ${BIẾN} được thay bởi envsubst lúc container khởi động (xem Dockerfile).
+# File này nằm trong khối http {}, nên khai báo map / limit_req_zone ở cấp ngoài cùng.
+# =====================================================================
+
+# --- Ẩn phiên bản nginx --------------------------------------------------
+server_tokens off;
+
+# --- Giới hạn tốc độ theo IP -------------------------------------------
+# Lưu ý: sinh viên trong trường thường dùng chung một IP (NAT) và cùng đăng nhập lúc mở đăng ký,
+# nên đừng đặt LOGIN_RATE quá thấp.
+limit_req_zone $binary_remote_addr zone=api:10m   rate=${API_RATE};
+limit_req_zone $binary_remote_addr zone=login:10m rate=${LOGIN_RATE};
+limit_req_status 429;
+
+# --- Đường dẫn "an toàn" để nhúng vào JSON lỗi: cắt tại dấu ?, " (\x22), \ (\x5c) hoặc khoảng trắng ---
+map $request_uri $safe_path {
+    default                          "";
+    '~^(?<p>[^\x22\x5c\x20?]*)'      $p;
+}
+
+# --- Upgrade WebSocket (dev server của front-end có thể cần HMR) --------
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ""      "";
+}
+
+# --- Log kèm request id để lần theo một request qua các tầng ------------
+log_format gateway '$remote_addr [$time_iso8601] "$request" $status $body_bytes_sent '
+                   'rt=$request_time urt=$upstream_response_time rid=$request_id';
+
+server {
+    listen 80;
+    server_name _;
+
+    access_log /var/log/nginx/access.log gateway;
+
+    # Phân giải DNS khi chạy (không lúc khởi động) -> gateway vẫn lên được khi
+    # front-end/back-end chưa chạy.
+    resolver ${DNS_RESOLVER} valid=10s ipv6=off;
+    set $backend_upstream  ${BACKEND_URL};
+    set $frontend_upstream ${FRONTEND_URL};
+
+    client_max_body_size 1m;          # JSON của hệ thống rất nhỏ
+    client_body_timeout 10s;
+    gzip on;
+    gzip_types application/json text/css application/javascript image/svg+xml;
+    gzip_min_length 1024;
+
+    # --- Header bảo mật & truy vết (áp dụng cho mọi phản hồi) --------------
+    add_header X-Request-Id $request_id always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # Bật khi đã có HTTPS:
+    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # --- Lỗi do gateway sinh ra: cùng cấu trúc ErrorResponse như backend ----
+    # (status, error, message, details, path, timestamp). 429 và 413 là mã MỚI ngoài hợp đồng
+    # hiện tại -> cần báo nhóm front-end; 502/503/504 dùng mã INTERNAL_ERROR đã có.
+    error_page 429 @err429;
+    error_page 413 @err413;
+    error_page 502 @err502;
+    error_page 503 @err503;
+    error_page 504 @err504;
+
+    location @err429 {
+        default_type application/json;
+        add_header Retry-After 5 always;
+        return 429 '{"status":429,"error":"TOO_MANY_REQUESTS","message":"Bạn thao tác quá nhanh, vui lòng thử lại sau ít giây","details":[],"path":"$safe_path","timestamp":"$time_iso8601"}';
+    }
+    location @err413 {
+        default_type application/json;
+        return 413 '{"status":413,"error":"PAYLOAD_TOO_LARGE","message":"Dữ liệu gửi lên quá lớn","details":[],"path":"$safe_path","timestamp":"$time_iso8601"}';
+    }
+    location @err502 {
+        default_type application/json;
+        return 502 '{"status":502,"error":"INTERNAL_ERROR","message":"Hệ thống đang gặp lỗi, vui lòng thử lại sau","details":[],"path":"$safe_path","timestamp":"$time_iso8601"}';
+    }
+    location @err503 {
+        default_type application/json;
+        return 503 '{"status":503,"error":"INTERNAL_ERROR","message":"Hệ thống đang gặp lỗi, vui lòng thử lại sau","details":[],"path":"$safe_path","timestamp":"$time_iso8601"}';
+    }
+    location @err504 {
+        default_type application/json;
+        return 504 '{"status":504,"error":"INTERNAL_ERROR","message":"Hệ thống phản hồi quá chậm, vui lòng thử lại sau","details":[],"path":"$safe_path","timestamp":"$time_iso8601"}';
+    }
+
+    # --- Sức khỏe ------------------------------------------------------------
+    location = /health {
+        access_log off;
+        default_type application/json;
+        return 200 '{"status":"ok"}';
+    }
+
+    location = /health/backend {
+        access_log off;
+        rewrite ^ /health break;          # backend phục vụ /health (ngoài /api)
+        proxy_pass $backend_upstream;
+        proxy_set_header Host $host;
+        proxy_connect_timeout 2s;
+        proxy_read_timeout 3s;
+    }
+
+    # --- Đăng nhập: giới hạn chặt hơn để chống dò mật khẩu -------------------
+    location = /api/auth/login {
+        limit_req zone=login burst=20 nodelay;
+        include /etc/nginx/conf.d/proxy_api.inc;
+    }
+
+    # --- Toàn bộ API (kể cả /api/docs, /api/openapi.json) -----------------------
+    location /api/ {
+        limit_req zone=api burst=60 nodelay;
+        include /etc/nginx/conf.d/proxy_api.inc;
+    }
+
+    # --- Front-end -------------------------------------------------------------
+    location / {
+        proxy_pass $frontend_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+    }
+}

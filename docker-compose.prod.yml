@@ -1,0 +1,46 @@
+# Chạy trên server (do job deploy chép lên ~/course-registration và chạy).
+# Cần file .env cùng thư mục, TẠO TAY MỘT LẦN trên server (không commit):
+#   MYSQL_ROOT_PASSWORD=...   MYSQL_PASSWORD=...   (nên dùng ký tự an toàn cho URL: chữ + số)
+#   JWT_SECRET=...            (chuỗi ngẫu nhiên >= 32 ký tự, vd: openssl rand -hex 32)
+# REGISTRY_IMAGE và IMAGE_TAG do job deploy truyền vào.
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: course_registration
+      MYSQL_USER: app
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes: ["dbdata:/var/lib/mysql"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u$$MYSQL_USER $$MYSQL_DATABASE -e 'SELECT 1' > /dev/null 2>&1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    image: ${REGISTRY_IMAGE:?}/backend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: prod
+      DATABASE_URL: mysql+pymysql://app:${MYSQL_PASSWORD}@db:3306/course_registration?charset=utf8mb4
+      JWT_SECRET: ${JWT_SECRET:?}
+    depends_on:
+      db: { condition: service_healthy }
+    expose: ["8000"]
+
+  gateway:
+    image: ${REGISTRY_IMAGE:?}/gateway:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports: ["80:80"]
+    depends_on:
+      backend: { condition: service_healthy }
+
+volumes:
+  dbdata:

@@ -1,0 +1,17 @@
+### Cần extension "REST Client" (humao.rest-client). Chạy API trước: uvicorn app.main:app --reload
+@host = http://localhost:8000
+
+### Đăng nhập (sau khi chạy: python -m scripts.seed)
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "username": "sv20260001", "password": "Sv@12345" }
+
+### Người dùng hiện tại
+GET {{host}}/api/auth/me
+Authorization: Bearer {{login.response.body.token}}
+
+### Học kỳ hiện tại
+GET {{host}}/api/semesters/current
+Authorization: Bearer {{login.response.body.token}}
