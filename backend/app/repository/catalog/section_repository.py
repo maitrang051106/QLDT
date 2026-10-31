@@ -28,6 +28,7 @@ class SectionRepository(BaseRepository):
         semester_id: int,
         subject_id: int | None,
         keyword: str | None,
+        unit_keyword: str | None,
         offset: int,
         limit: int,
         sort: str | None,
@@ -63,6 +64,12 @@ class SectionRepository(BaseRepository):
             )
             stmt = stmt.where(condition)
             count_stmt = count_stmt.where(condition)
+
+        if unit_keyword:
+            unit_kw = f"%{unit_keyword.strip()}%"
+            unit_condition = Subject.description.ilike(unit_kw)
+            stmt = stmt.where(unit_condition)
+            count_stmt = count_stmt.where(unit_condition)
 
         total = self.db.scalar(count_stmt) or 0
         stmt = (

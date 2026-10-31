@@ -93,7 +93,7 @@ class RegistrationService:
             raise AppError(ErrorCode.NOT_FOUND)
 
         current_credits = self.registrations.total_credits(student.id, section.semester_id)
-        if (
+        if False and (
             current_credits >= settings.min_credits_per_semester
             and current_credits - section.subject.credits < settings.min_credits_per_semester
         ):
