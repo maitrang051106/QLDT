@@ -1,6 +1,6 @@
 -- =====================================================================
 -- QLDT - Hệ thống Quản lý & Đăng ký Học phần Trực tuyến
--- Lược đồ quan hệ (16 bảng)
+-- Lược đồ quan hệ (18 bảng)
 -- Sinh theo: Tài liệu thiết kế phần mềm v1.0 - mục 3.2 và 3.3
 --           Quy ước API và JSON (FE-BE) v1.0 - mục 3.2 (đối chiếu tên cột)
 -- Mã nguồn chuẩn máy đọc được: openapi.yaml
@@ -26,9 +26,11 @@ DROP TABLE IF EXISTS TUITION_PAYMENTS;
 DROP TABLE IF EXISTS TUITION_INVOICE_ITEMS;
 DROP TABLE IF EXISTS TUITION_INVOICES;
 DROP TABLE IF EXISTS TUITION_INSTALLMENTS;
-DROP TABLE IF EXISTS TUITION_DISCOUNTS;
 DROP TABLE IF EXISTS TUITION_RATES;
 DROP TABLE IF EXISTS RECEIPT_SEQUENCES;
+DROP TABLE IF EXISTS STUDENT_GRADES;
+DROP TABLE IF EXISTS SECTION_GRADE_COMPONENTS;
+DROP TABLE IF EXISTS ATTENDANCE_RECORDS;
 DROP TABLE IF EXISTS REGISTRATIONS;
 DROP TABLE IF EXISTS COURSE_SECTIONS;
 DROP TABLE IF EXISTS LECTURERS;
@@ -283,6 +285,8 @@ CREATE TABLE STUDENT_GRADES (
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci
   COMMENT 'Điểm thành phần của sinh viên';
+
+-- ---------------------------------------------------------------------
 -- TUITION_RATES: đơn giá một tín chỉ học phí theo học kỳ / khóa / ngành
 -- ---------------------------------------------------------------------
 CREATE TABLE TUITION_RATES (
@@ -306,31 +310,6 @@ CREATE TABLE TUITION_RATES (
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci
   COMMENT 'Đơn giá học phí theo tín chỉ học phí';
-
--- ---------------------------------------------------------------------
--- TUITION_DISCOUNTS: các khoản miễn giảm học phí cho sinh viên
--- ---------------------------------------------------------------------
-CREATE TABLE TUITION_DISCOUNTS (
-    discount_id      BIGINT        NOT NULL AUTO_INCREMENT COMMENT 'Mã miễn giảm',
-    student_id       BIGINT        NOT NULL                COMMENT 'Sinh viên được miễn giảm',
-    semester_id      BIGINT        NOT NULL                COMMENT 'Học kỳ áp dụng',
-    discount_percent DECIMAL(5, 2) NOT NULL DEFAULT 0.00   COMMENT 'Phần trăm miễn giảm (0-100)',
-    fixed_amount     BIGINT        NOT NULL DEFAULT 0      COMMENT 'Số tiền miễn giảm cố định (VND)',
-    reason           VARCHAR(255)  NOT NULL                COMMENT 'Lý do miễn giảm',
-    granted_by       VARCHAR(100)  NOT NULL                COMMENT 'Người cấp / quyết định',
-    created_at       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời điểm tạo',
-    PRIMARY KEY (discount_id),
-    KEY idx_tuition_discounts_student_semester (student_id, semester_id),
-    CONSTRAINT fk_tuition_discounts_student FOREIGN KEY (student_id) REFERENCES STUDENTS (student_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_tuition_discounts_semester FOREIGN KEY (semester_id) REFERENCES SEMESTERS (semester_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT ck_tuition_discounts_percent CHECK (discount_percent >= 0 AND discount_percent <= 100),
-    CONSTRAINT ck_tuition_discounts_fixed CHECK (fixed_amount >= 0)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci
-  COMMENT 'Miễn giảm học phí';
 
 -- ---------------------------------------------------------------------
 -- TUITION_INSTALLMENTS: cấu hình các đợt nộp học phí trong học kỳ
@@ -369,7 +348,6 @@ CREATE TABLE TUITION_INVOICES (
     student_id     BIGINT                                                  NOT NULL                COMMENT 'Sinh viên',
     semester_id    BIGINT                                                  NOT NULL                COMMENT 'Học kỳ',
     total_tuition  BIGINT                                                  NOT NULL DEFAULT 0      COMMENT 'Tổng học phí môn học (VND)',
-    total_discount BIGINT                                                  NOT NULL DEFAULT 0      COMMENT 'Tổng miễn giảm (VND)',
     amount_due     BIGINT                                                  NOT NULL DEFAULT 0      COMMENT 'Số tiền phải nộp (VND)',
     amount_paid    BIGINT                                                  NOT NULL DEFAULT 0      COMMENT 'Số tiền đã nộp lũy kế (VND)',
     status         ENUM('UNPAID', 'PARTIALLY_PAID', 'PAID', 'CANCELLED')    NOT NULL DEFAULT 'UNPAID' COMMENT 'Trạng thái hóa đơn',
@@ -383,7 +361,6 @@ CREATE TABLE TUITION_INVOICES (
     CONSTRAINT fk_tuition_invoices_semester FOREIGN KEY (semester_id) REFERENCES SEMESTERS (semester_id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT ck_tuition_invoices_total CHECK (total_tuition >= 0),
-    CONSTRAINT ck_tuition_invoices_discount CHECK (total_discount >= 0),
     CONSTRAINT ck_tuition_invoices_due CHECK (amount_due >= 0),
     CONSTRAINT ck_tuition_invoices_paid CHECK (amount_paid >= 0)
 ) ENGINE = InnoDB

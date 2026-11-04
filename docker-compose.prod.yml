@@ -40,12 +40,18 @@ services:
       db: { condition: service_healthy }
     expose: ["8000"]
 
+  frontend:
+    image: ${REGISTRY_IMAGE:?REGISTRY_IMAGE is required}/frontend:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    expose: ["80"]
+
   gateway:
     image: ${REGISTRY_IMAGE:?REGISTRY_IMAGE is required}/gateway:${IMAGE_TAG:-latest}
     restart: unless-stopped
     ports: ["80:80"]
     depends_on:
       backend: { condition: service_healthy }
+      frontend: { condition: service_healthy }
 
 volumes:
   dbdata:

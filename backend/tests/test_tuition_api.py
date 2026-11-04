@@ -12,7 +12,6 @@ from app.entity.catalog.semester import Semester
 from app.entity.catalog.subject import Subject
 from app.entity.registration.registration import Registration
 from app.entity.tuition.receipt import Receipt
-from app.entity.tuition.tuition_discount import TuitionDiscount
 from app.entity.tuition.tuition_installment import TuitionInstallment
 from app.entity.tuition.tuition_payment import TuitionPayment
 from app.entity.tuition.tuition_rate import TuitionRate
@@ -197,34 +196,11 @@ def test_tuition_permissions_and_payment_limits(client, db_session):
     )
 
 
-def test_discount_excess_rejected_and_installment_reconfiguration_after_payment_blocked(
-    client, db_session
-):
+def test_installment_reconfiguration_after_payment_blocked(client, db_session):
     world = _tuition_world(db_session)
     admin_headers = login(client, "admin", "Admin@123")
     student_headers = login(client, "sv1", "Sv@12345")
 
-    db_session.add(
-        TuitionDiscount(
-            student_id=world["student"].id,
-            semester_id=world["semester"].id,
-            discount_percent=Decimal("50"),
-            fixed_amount=10000,
-            reason="Kiểm thử vượt tổng",
-            granted_by="admin",
-        )
-    )
-    db_session.commit()
-    result = client.post(
-        "/api/admin/tuition/invoices/generate",
-        json={"semesterId": world["semester"].id, "studentId": world["student"].id},
-        headers=admin_headers,
-    )
-    assert result.status_code == 400
-    assert result.json()["error"] == "DISCOUNT_EXCEEDS_TOTAL"
-
-    db_session.query(TuitionDiscount).delete()
-    db_session.commit()
     invoice = client.get(
         f"/api/tuition/me?semesterId={world['semester'].id}", headers=student_headers
     ).json()
@@ -277,21 +253,6 @@ def test_admin_tuition_configuration_generation_and_reporting(client, db_session
     assert duplicate_rate.status_code == 409
     assert duplicate_rate.json()["error"] == "DUPLICATE_CODE"
 
-    discount = client.post(
-        "/api/admin/tuition/discounts",
-        headers=admin_headers,
-        json={
-            "studentId": world["student"].id,
-            "semesterId": world["semester"].id,
-            "discountPercent": 10,
-            "reason": "Hỗ trợ kiểm thử",
-        },
-    )
-    assert discount.status_code == 201, discount.text
-    assert discount.json()["discountPercent"] == 10.0
-    admin_name = db_session.scalars(select(User).where(User.username == "admin")).one().full_name
-    assert discount.json()["grantedBy"] == admin_name
-
     duplicate_installments = client.put(
         "/api/admin/tuition/installments",
         headers=admin_headers,
@@ -329,14 +290,14 @@ def test_admin_tuition_configuration_generation_and_reporting(client, db_session
         headers=admin_headers,
     )
     assert invoices.status_code == 200
-    assert invoices.json()["items"][0]["amountDue"] == 13500
+    assert invoices.json()["items"][0]["amountDue"] == 15000
     summary = client.get(
         f"/api/admin/tuition/reports/summary?semesterId={world['semester'].id}",
         headers=admin_headers,
     )
     assert summary.status_code == 200
     assert summary.json()["totalInvoices"] == 1
-    assert summary.json()["totalAmountDue"] == 13500
+    assert summary.json()["totalAmountDue"] == 15000
 
 
 def test_student_tuition_rejects_unknown_semester(client):

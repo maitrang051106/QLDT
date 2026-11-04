@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 import pytest
 from pydantic import ValidationError
@@ -15,6 +16,12 @@ from app.entity.catalog.course_section import CourseSection
 from app.entity.catalog.room import Room
 from app.entity.catalog.semester import Semester
 from app.entity.catalog.subject import Subject
+from app.entity.registration.attendance import (
+    AttendanceRecord,
+    AttendanceStatus,
+    GradeComponent,
+    StudentGrade,
+)
 from app.entity.registration.registration import Registration as RegistrationEntity
 from app.service.registration.registration_service import RegistrationService
 
@@ -187,14 +194,33 @@ def test_register_at_exact_credit_limit_is_allowed(db_session, registration_worl
     assert second.current_enrollment == 1
 
 
-def test_cancel_below_minimum_is_allowed(db_session, registration_world):
+def test_cancel_below_minimum_is_rejected(db_session, registration_world):
     section = registration_world["add_section"]("SEC-1", "SUB-1", 12)
     registration = _register(db_session, registration_world["student"], section)
 
-    RegistrationService(db_session).cancel(registration_world["student"], registration.id)
+    with pytest.raises(AppError) as error:
+        RegistrationService(db_session).cancel(registration_world["student"], registration.id)
 
     db_session.refresh(section)
-    assert section.current_enrollment == 0
+    assert error.value.code == ErrorCode.CREDIT_LIMIT_BELOW_MIN
+    assert {detail["field"] for detail in error.value.details} == {
+        "currentCredits",
+        "minCredits",
+    }
+    assert section.current_enrollment == 1
+    assert db_session.get(RegistrationEntity, registration.id) is not None
+
+
+def test_cancel_above_minimum_is_allowed(db_session, registration_world):
+    first = registration_world["add_section"]("SEC-1", "SUB-1", 12, day=2)
+    second = registration_world["add_section"]("SEC-2", "SUB-2", 6, day=3)
+    _register(db_session, registration_world["student"], first)
+    registration = _register(db_session, registration_world["student"], second)
+
+    RegistrationService(db_session).cancel(registration_world["student"], registration.id)
+
+    db_session.refresh(second)
+    assert second.current_enrollment == 0
     assert db_session.get(RegistrationEntity, registration.id) is None
 
 
@@ -207,6 +233,59 @@ def test_cancel_before_student_reaches_minimum_is_allowed(db_session, registrati
     db_session.refresh(section)
     assert section.current_enrollment == 0
     assert db_session.get(RegistrationEntity, registration.id) is None
+
+
+def test_cancel_cleans_up_uncommitted_attendance_and_grades(db_session, registration_world):
+    section = registration_world["add_section"]("SEC-1", "SUB-1", 8)
+    student_user = registration_world["student"]
+    registration = _register(db_session, student_user, section)
+    student = db_session.scalars(select(Student).where(Student.user_id == student_user.id)).first()
+
+    attendance = AttendanceRecord(
+        section_id=section.id,
+        student_id=student.id,
+        class_date=date(2026, 1, 5),
+        status=AttendanceStatus.PRESENT,
+        marked_by_user_id=student_user.id,
+    )
+    component = GradeComponent(
+        section_id=section.id,
+        name="Giữa kỳ",
+        weight_percentage=100,
+        max_score=Decimal("10.00"),
+        sort_order=1,
+    )
+    db_session.add_all([attendance, component])
+    db_session.flush()
+    grade = StudentGrade(
+        component_id=component.id,
+        student_id=student.id,
+        score=Decimal("8.50"),
+        updated_by_user_id=student_user.id,
+    )
+    db_session.add(grade)
+    db_session.commit()
+
+    RegistrationService(db_session).cancel(student_user, registration.id)
+
+    assert (
+        db_session.scalars(
+            select(AttendanceRecord).where(
+                AttendanceRecord.section_id == section.id,
+                AttendanceRecord.student_id == student.id,
+            )
+        ).first()
+        is None
+    )
+    assert (
+        db_session.scalars(
+            select(StudentGrade).where(
+                StudentGrade.component_id == component.id,
+                StudentGrade.student_id == student.id,
+            )
+        ).first()
+        is None
+    )
 
 
 def test_cancel_rejects_registration_owned_by_another_student(db_session, registration_world):

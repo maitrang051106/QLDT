@@ -1,54 +1,62 @@
-# QLDT — Quản lý và đăng ký học phần
+# QLDT — Hệ thống Quản lý và Đăng ký Học phần
 
-Dự án môn IT3180, Nhóm 20. Stack: React + TypeScript, FastAPI, MySQL.
-Chức năng hiện có gồm đăng ký học phần, quản trị lớp, thời khóa biểu, điểm danh, bảng điểm
-theo lớp và xuất báo cáo Excel cho giảng viên phụ trách.
+Dự án môn học IT3180 (Nhóm 20). Công nghệ sử dụng: **React 19 + TypeScript + Ant Design**, **FastAPI + SQLAlchemy 2 + Alembic**, **MySQL 8.4** và **Nginx API Gateway**.
 
-## Chạy FE–BE–DB local (Windows)
+Hệ thống vận hành tập trung trên **1 học kỳ đăng ký duy nhất (`2026.1`)**, bao gồm các phân hệ:
+- Xác thực & phân quyền JWT (`ADMIN`, `LECTURER`, `STUDENT`).
+- Quản lý danh mục môn học, lớp học phần và kiểm tra xung đột lịch phòng / giảng viên / sinh viên.
+- **Đăng ký lớp** và hủy đăng ký an toàn đồng thời (kiểm soát giới hạn `12–24 TC`, khóa dòng chống vượt sĩ số).
+- Thời khóa biểu tuần cho sinh viên, giảng viên và lịch toàn trường cho Admin.
+- Điểm danh, cấu hình cột điểm, nhập bảng điểm và xuất báo cáo Excel theo lớp học phần.
+- Tính học phí theo tín chỉ học phí (TCHP), chia đợt nộp, thanh toán trực tuyến idempotent và phát hành biên lai PDF.
 
-Yêu cầu Docker Desktop, Python 3.12+, Node.js 20+ và npm. Tại thư mục gốc, tạo cấu hình một lần:
+---
+
+## 1. Chạy toàn bộ hệ thống bằng Docker Compose
+
+Tại thư mục gốc, tạo file `.env` từ mẫu:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Thay `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` và `JWT_SECRET` trong `.env` (JWT tối thiểu 32 ký tự). Chạy MySQL:
+Cập nhật `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` và `JWT_SECRET` (tối thiểu 32 ký tự) trong `.env`, sau đó khởi chạy:
+
+```powershell
+docker compose up --build -d
+```
+
+- **Điểm vào duy nhất (Gateway + Giao diện Web)**: `http://localhost:8080`
+- **Swagger UI (Tài liệu API)**: `http://localhost:8080/api/docs`
+
+---
+
+## 2. Chạy môi trường phát triển (Local Dev trên Windows)
+
+### Bước 1: Khởi động MySQL và nạp dữ liệu mẫu chuẩn (`db/`)
 
 ```powershell
 docker compose up -d db
-```
-
-### Nạp database mẫu đầy đủ (mặc định)
-
-Bộ dữ liệu mặc định gồm 1.000 sinh viên, 10 giảng viên, 100 môn và 400 lớp trong học kỳ `2026.1`.
-Các lệnh dưới đây tạo lại toàn bộ bảng và nạp dữ liệu mẫu. Nếu database đã có dữ liệu cần giữ,
-lệnh `mysqldump` đầu tiên sẽ sao lưu vào `qldt-backup.sql`.
-
-```powershell
-docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -uroot --databases qldt > /tmp/qldt-backup.sql'
-docker compose cp db:/tmp/qldt-backup.sql qldt-backup.sql
 docker compose cp db/schema.sql db:/tmp/schema.sql
 docker compose cp db/seed/seed.sql db:/tmp/seed.sql
 docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot < /tmp/schema.sql'
 docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot qldt < /tmp/seed.sql'
 ```
 
-> Dùng `db/schema.sql` + `db/seed/seed.sql` **thay cho** `alembic upgrade head` +
-> `python -m scripts.seed`; không chạy cả hai cách trên cùng một database. Dữ liệu nằm trong Docker
-> volume `dbdata` nên chỉ cần nạp một lần; nạp lại khi muốn reset hoặc sau `docker compose down -v`.
+> **Lưu ý**: Bộ dữ liệu chuẩn (`db/schema.sql` + `db/seed/seed.sql`) gồm 18 bảng, 1 học kỳ duy nhất (`2026.1`), 1 tài khoản Admin, 18 giảng viên (`gv001..gv018`, 0 xung đột lịch dạy), 1.000 sinh viên (`sv20210001..sv20211000`), 100 môn học, 30 phòng học và 400 lớp học phần. Dùng `alembic stamp head` sau khi nạp SQL chuẩn; không chạy chồng `alembic upgrade head` lên database vừa nạp từ `schema.sql`.
 
-Mở terminal thứ hai để chạy backend:
+### Bước 2: Chạy Backend (`http://localhost:8000`)
 
 ```powershell
 cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-alembic stamp head   # đánh dấu schema đã khớp migration, không tạo lại bảng
+alembic stamp head
 uvicorn app.main:app --reload
 ```
 
-Mở terminal thứ ba để chạy frontend:
+### Bước 3: Chạy Frontend (`http://localhost:5173`)
 
 ```powershell
 cd frontend
@@ -56,52 +64,31 @@ npm install
 npm run dev
 ```
 
-Vite chạy tại `http://localhost:5173`, proxy `/api` tới backend `http://localhost:8000`. API docs: `http://localhost:8000/api/docs`; health: `http://localhost:8000/health`.
+---
 
-Bộ dữ liệu đầy đủ tạo tài khoản `admin / admin`, `gv001`–`gv010 / 123456` và
-`sv20210001`–`sv20211000 / 123456`. Chỉ dùng các mật khẩu mẫu ở môi trường local.
+## 3. Tài khoản mẫu
 
-### Dùng dữ liệu dev tối thiểu (tùy chọn)
+| Vai trò | Tên đăng nhập | Mật khẩu | Mã định danh |
+|---|---|---|---|
+| **ADMIN** | `admin` | `admin` | Quản trị viên đào tạo |
+| **LECTURER** | `gv001` .. `gv018` | `123456` | `GV001` .. `GV018` |
+| **STUDENT** | `sv20210001` .. `sv20211000` | `123456` | `20210001` .. `20211000` |
 
-Nếu không cần bộ dữ liệu đầy đủ, bỏ qua phần nạp database ở trên và dùng migration + seed dev:
+---
 
-```powershell
-cd backend
-alembic upgrade head
-python -m scripts.seed
-```
-
-Seed dev chỉ tạo `admin`, `gv001`, `sv20210001`, 1 môn (`IT3180`) và 1 lớp (`150001`).
-Không chạy cách này trên database đã nạp full seed.
-
-## Chạy kiểm tra
+## 4. Kiểm tra chất lượng mã nguồn (Lint, Test & Build)
 
 ```powershell
-# backend (trong backend/ và đã activate .venv)
-ruff check .
-pytest
+# Kiểm tra Backend (từ thư mục gốc)
+python -m ruff check backend
+python -m ruff format --check backend
+$env:PYTHONPATH="backend"; pytest backend/tests -q
 
-# frontend (trong frontend/)
-npm run build
+# Kiểm tra TypeScript & Build Frontend
+npm --prefix frontend run build
+
+# Kiểm thử hiệu năng & chịu tải (tùy chọn với k6)
+k6 run -e SEMESTER_ID=1 -e STUDENT_USERNAME=sv20210001 -e STUDENT_PASSWORD=123456 tests/performance/registration-load.js
 ```
 
-## Kiểm thử quản trị đào tạo (Feature 10)
-
-Sau khi nạp bộ dữ liệu đầy đủ (hoặc dev seed), nạp thêm bộ dữ liệu thử nghiệm:
-
-```powershell
-cd backend
-python -m scripts.seed_test_data
-pytest
-pytest -m integration
-```
-
-`pytest -m integration` cần MySQL, gateway và frontend đang chạy; xem hướng dẫn đầy đủ,
-bảng dữ liệu và checklist giao diện tại [docs/testing/feature10-admin-training.md](docs/testing/feature10-admin-training.md).
-
-## Nguồn dữ liệu và hợp đồng
-
-- `db/schema.sql` và `db/seed/seed.sql` là schema/seed SQL chuẩn; xem [db/README.md](db/README.md). Không nạp SQL seed lên database đã có dữ liệu nếu chưa xác nhận tác động.
-- Hợp đồng FE–BE nằm tại `contracts/openapi.yaml` và `contracts/api-types.ts`. JSON dùng camelCase; object môn/lớp/học kỳ trả `id`, còn request tham chiếu dùng `subjectId`, `sectionId`, `semesterId`.
-- Backend theo luồng `controller → service → repository → entity`; nghiệp vụ đăng ký, xung đột và sĩ số do server quản lý.
-- [backend/README.md](backend/README.md) và [frontend/README.md](frontend/README.md) có ghi chú riêng cho từng ứng dụng.
+Tài liệu chi tiết về kiến trúc, nghiệp vụ, API và cơ sở dữ liệu được đặt tại [docs/00-INDEX.md](docs/00-INDEX.md).

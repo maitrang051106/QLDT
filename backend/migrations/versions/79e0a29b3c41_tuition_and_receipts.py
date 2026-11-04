@@ -50,62 +50,7 @@ def upgrade() -> None:
     )
     op.create_index("idx_tuition_rates_lookup", "TUITION_RATES", ["semester_id", "cohort", "major"])
 
-    # 3. Tạo bảng TUITION_DISCOUNTS
-    op.create_table(
-        "TUITION_DISCOUNTS",
-        sa.Column(
-            "discount_id",
-            sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
-            autoincrement=True,
-            nullable=False,
-        ),
-        sa.Column(
-            "student_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False
-        ),
-        sa.Column(
-            "semester_id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"), nullable=False
-        ),
-        sa.Column(
-            "discount_percent",
-            sa.Numeric(precision=5, scale=2),
-            server_default="0.00",
-            nullable=False,
-        ),
-        sa.Column(
-            "fixed_amount",
-            sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
-            server_default="0",
-            nullable=False,
-        ),
-        sa.Column("reason", sa.String(length=255), nullable=False),
-        sa.Column("granted_by", sa.String(length=100), nullable=False),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
-        sa.CheckConstraint(
-            "discount_percent >= 0 AND discount_percent <= 100",
-            name=op.f("ck_TUITION_DISCOUNTS_discount_percent_range"),
-        ),
-        sa.CheckConstraint(
-            "fixed_amount >= 0", name=op.f("ck_TUITION_DISCOUNTS_fixed_amount_non_negative")
-        ),
-        sa.ForeignKeyConstraint(
-            ["student_id"],
-            ["STUDENTS.student_id"],
-            name=op.f("fk_TUITION_DISCOUNTS_student_id_STUDENTS"),
-            ondelete="RESTRICT",
-        ),
-        sa.ForeignKeyConstraint(
-            ["semester_id"],
-            ["SEMESTERS.semester_id"],
-            name=op.f("fk_TUITION_DISCOUNTS_semester_id_SEMESTERS"),
-            ondelete="RESTRICT",
-        ),
-        sa.PrimaryKeyConstraint("discount_id", name=op.f("pk_TUITION_DISCOUNTS")),
-    )
-    op.create_index(
-        "idx_tuition_discounts_student_semester", "TUITION_DISCOUNTS", ["student_id", "semester_id"]
-    )
-
-    # 4. Tạo bảng TUITION_INSTALLMENTS
+    # 3. Tạo bảng TUITION_INSTALLMENTS
     op.create_table(
         "TUITION_INSTALLMENTS",
         sa.Column(
@@ -139,7 +84,7 @@ def upgrade() -> None:
         ),
     )
 
-    # 5. Tạo bảng TUITION_INVOICES
+    # 4. Tạo bảng TUITION_INVOICES
     invoice_status_enum = sa.Enum(
         "UNPAID", "PARTIALLY_PAID", "PAID", "CANCELLED", name="invoice_status"
     )
@@ -164,12 +109,6 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column(
-            "total_discount",
-            sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
-            server_default="0",
-            nullable=False,
-        ),
-        sa.Column(
             "amount_due",
             sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
             server_default="0",
@@ -187,9 +126,6 @@ def upgrade() -> None:
         sa.Column("updated_at", sa.DateTime(), server_default=sa.func.now(), nullable=False),
         sa.CheckConstraint(
             "total_tuition >= 0", name=op.f("ck_TUITION_INVOICES_total_tuition_non_negative")
-        ),
-        sa.CheckConstraint(
-            "total_discount >= 0", name=op.f("ck_TUITION_INVOICES_total_discount_non_negative")
         ),
         sa.CheckConstraint(
             "amount_due >= 0", name=op.f("ck_TUITION_INVOICES_amount_due_non_negative")
@@ -216,7 +152,7 @@ def upgrade() -> None:
         "idx_tuition_invoices_student_semester", "TUITION_INVOICES", ["student_id", "semester_id"]
     )
 
-    # 6. Tạo bảng TUITION_INVOICE_ITEMS
+    # 5. Tạo bảng TUITION_INVOICE_ITEMS
     op.create_table(
         "TUITION_INVOICE_ITEMS",
         sa.Column(
@@ -268,7 +204,7 @@ def upgrade() -> None:
     )
     op.create_index("idx_invoice_items_invoice_id", "TUITION_INVOICE_ITEMS", ["invoice_id"])
 
-    # 7. Tạo bảng TUITION_PAYMENTS
+    # 6. Tạo bảng TUITION_PAYMENTS
     op.create_table(
         "TUITION_PAYMENTS",
         sa.Column(
@@ -316,7 +252,7 @@ def upgrade() -> None:
     )
     op.create_index("idx_tuition_payments_invoice", "TUITION_PAYMENTS", ["invoice_id"])
 
-    # 8. Tạo bảng RECEIPTS
+    # 7. Tạo bảng RECEIPTS
     op.create_table(
         "RECEIPTS",
         sa.Column(
@@ -362,7 +298,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("payment_id", name=op.f("uq_receipt_payment")),
     )
 
-    # 9. Tạo bảng RECEIPT_SEQUENCES
+    # 8. Tạo bảng RECEIPT_SEQUENCES
     op.create_table(
         "RECEIPT_SEQUENCES",
         sa.Column(
@@ -386,6 +322,5 @@ def downgrade() -> None:
     op.drop_table("TUITION_INVOICE_ITEMS")
     op.drop_table("TUITION_INVOICES")
     op.drop_table("TUITION_INSTALLMENTS")
-    op.drop_table("TUITION_DISCOUNTS")
     op.drop_table("TUITION_RATES")
     op.drop_column("SUBJECTS", "tuition_credits")

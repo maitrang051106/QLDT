@@ -1,28 +1,24 @@
 # QLDT Project Harness
 
-## Project
+## Tổng quan dự án
 
-Course registration and academic management system for IT3180. The repository is divided into contracts, backend, frontend, database, documentation, gateway, CI/CD, and end-to-end tests.
+Hệ thống Quản lý & Đăng ký Học phần trực tuyến (môn IT3180 – Nhóm 20). Kho mã nguồn được chia thành các phần: hợp đồng API (`contracts/`), Backend (`backend/`), Frontend (`frontend/`), Cơ sở dữ liệu (`db/`), Tài liệu (`docs/`), Cổng định tuyến (`gateway/`), CI/CD (`.github/workflows/`) và Kiểm thử hiệu năng (`tests/performance/`).
 
-## Source of truth
+## Nguồn chuẩn (Source of Truth)
 
-- Read `docs/00-INDEX.md` to find the right project document.
-- The supplied FE-BE API conventions take precedence over older design notes.
-- `contracts/openapi.yaml` and `contracts/api-types.ts` define the official API contract and shared TypeScript types for frontend and backend.
-- SQL schema and seed live under `db/`; see `db/README.md` for setup.
-- Backend is FastAPI + SQLAlchemy + Alembic under `backend/app/`; migrations preserve the uppercase SQL table names in `db/schema.sql`.
-- `backend/CLAUDE.md` is the backend-specific harness. Business services cover UC001-UC010; registration operates on a single active semester, enforces credit limits, and serializes registration changes. Prerequisite and corequisite checks are excluded.
-- Completed backend capabilities include concurrency-safe registration/cancellation and section changes, authentication/authorization and ownership checks, and UC010 attendance, gradebook, and Excel exports. See `backend/CLAUDE.md` for implementation boundaries and focused tests.
-- `docker-compose.yml` is the local stack entry point; `.github/workflows/ci-cd.yml` runs backend checks, migrations, and gateway smoke tests.
+- Đọc [docs/00-INDEX.md](docs/00-INDEX.md) để tra cứu đúng tài liệu cần thiết cho từng tác vụ.
+- Quy ước API FE–BE trong [docs/api-and-database.md](docs/api-and-database.md) có độ ưu tiên cao nhất.
+- `contracts/openapi.yaml` và `contracts/api-types.ts` là hợp đồng API chính thức và kiểu TypeScript dùng chung cho toàn dự án.
+- Lược đồ SQL (18 bảng) và dữ liệu mẫu nằm tại `db/schema.sql` và `db/seed/seed.sql`.
+- Backend sử dụng FastAPI + SQLAlchemy 2 + Alembic trong `backend/app/`; các bản migration giữ nguyên tên bảng viết hoa (`UPPER_SNAKE_CASE`) như trong `db/schema.sql`.
+- Xem [backend/CLAUDE.md](backend/CLAUDE.md) cho quy tắc Backend: hệ thống bao phủ UC001–UC010, kiểm tra xung đột thời khóa biểu và thu học phí/biên lai điện tử; chỉ vận hành trên **1 học kỳ đang mở đăng ký duy nhất (`2026.1`)** với giới hạn tín chỉ `12–24 TC`. Không áp dụng điều kiện học phần tiên quyết, học phần song hành, đổi lớp nguyên tử hay miễn giảm học phí.
+- `docker-compose.yml` khởi chạy toàn bộ stack (`db`, `backend`, `frontend`, `gateway`); `.github/workflows/ci-cd.yml` tự động kiểm tra lint, test, migration, build Frontend và smoke test qua Gateway.
 
-## Working rules
+## Quy tắc làm việc chung
 
-- Frontend lives in `frontend/`; backend work belongs to the backend owner. The API application and tests live under `backend/app/` and `backend/tests/`.
-- Keep API names, camelCase JSON keys, UPPER_SNAKE_CASE enums, error codes, and `/api` base path aligned with the contract.
-- The server owns registration eligibility, conflicts, and seat counts. Refetch after mutations; never adjust enrollment counts locally.
-- Registration changes are atomic from the student's perspective: changing section is limited to the same subject and semester, and a failed change must preserve the existing registration and seat.
-- Assigned lecturers manage attendance, grades, and exports only for their own sections; ADMIN configures section-specific grade columns.
-- A 401 clears the session and returns to login. A 403 shows an access error without logging out.
-- Never expose passwords, password hashes, tokens, SQL, or stack traces in UI/logs.
-
-Run/setup commands live in `README.md`; backend/frontend-specific architecture rules live in their respective `CLAUDE.md` files.
+- Code Frontend đặt tại `frontend/`; code Backend đặt tại `backend/app/`, kiểm thử logic & API tại `backend/tests/`, và kịch bản đo tải K6 tại `tests/performance/`.
+- Giữ đồng bộ tuyệt đối tên trường JSON `camelCase`, enum `UPPER_SNAKE_CASE`, mã lỗi nghiệp vụ và tiền tố `/api`. Thống nhất thuật ngữ **"Đăng ký lớp"** trên cả giao diện và tài liệu API.
+- Backend chịu trách nhiệm kiểm tra điều kiện đăng ký, giới hạn tín chỉ, trùng lịch và sĩ số lớp. Frontend luôn gọi lại API (`refetch`) sau mỗi thao tác ghi, tuyệt đối không tự cộng/trừ sĩ số ở phía client.
+- Giảng viên chỉ được điểm danh, nhập điểm và xuất báo cáo Excel cho các lớp mình phụ trách; `ADMIN` cấu hình cột điểm và xem danh sách sinh viên.
+- Lỗi HTTP `401` xóa phiên đăng nhập và đưa về trang `/login`. Lỗi HTTP `403` chỉ hiển thị thông báo từ chối quyền truy cập, không đăng xuất.
+- Không bao giờ để lộ mật khẩu, chuỗi băm mật khẩu (`password_hash`), token, câu lệnh SQL hoặc stack trace ra giao diện hay log.

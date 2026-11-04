@@ -4,17 +4,18 @@ from app.core.config import settings
 from app.core.error_codes import ErrorCode
 from app.core.exceptions import AppError, field_error
 from app.dto.common import ItemList
-from app.dto.registration.registration import ChangeSectionRequest, RegisterRequest
+from app.dto.registration.registration import RegisterRequest
 from app.dto.registration.registration import Registration as RegistrationDto
 from app.entity.auth.user import User
 from app.entity.registration.registration import Registration as RegistrationEntity
 from app.repository.auth.user_repository import StudentRepository
 from app.repository.catalog.section_repository import SectionRepository
+from app.repository.registration.academic_records_repository import AcademicRecordsRepository
 from app.repository.registration.registration_repository import RegistrationRepository
 
 
 class RegistrationService:
-    """UC005 (đăng ký), UC006 (hủy & đổi lớp). Mỗi thao tác ghi là MỘT giao dịch: db.commit() ở cuối,
+    """UC005 (đăng ký lớp), UC006 (hủy đăng ký). Mỗi thao tác ghi là MỘT giao dịch: db.commit() ở cuối,
     lỗi nghiệp vụ -> ném AppError (get_db sẽ rollback)."""
 
     def __init__(self, db: Session) -> None:
@@ -22,6 +23,7 @@ class RegistrationService:
         self.students = StudentRepository(db)
         self.sections = SectionRepository(db)
         self.registrations = RegistrationRepository(db)
+        self.academic_records = AcademicRecordsRepository(db)
 
     def _sync_tuition_invoice_after_change(self, student_id: int, semester_id: int) -> None:
         from app.repository.catalog.semester_repository import SemesterRepository
@@ -119,7 +121,7 @@ class RegistrationService:
             raise AppError(ErrorCode.NOT_FOUND)
 
         current_credits = self.registrations.total_credits(student.id, section.semester_id)
-        if False and (
+        if (
             current_credits >= settings.min_credits_per_semester
             and current_credits - section.subject.credits < settings.min_credits_per_semester
         ):
@@ -134,93 +136,11 @@ class RegistrationService:
                 ],
             )
 
+        self.academic_records.delete_student_records_in_section(section.id, student.id)
         self.registrations.delete(registration)
         self.sections.decrement_enrollment(section.id)
         self._sync_tuition_invoice_after_change(student.id, section.semester_id)
         self.db.commit()
-
-    def change_section(
-        self, user: User, registration_id: int, request: ChangeSectionRequest
-    ) -> RegistrationDto:
-        """Đổi lớp học phần nguyên tử (Atomic Change Section - UC006).
-
-        Cho phép đổi sang lớp khác của cùng môn học mà không bị rủi ro mất chỗ lớp cũ
-        nếu lớp mới bị đầy hoặc bị trùng lịch.
-        """
-        student = self.students.get_by_user_id_for_update(user.id)
-        if student is None:
-            raise AppError(ErrorCode.FORBIDDEN)
-
-        old_registration = self.registrations.get_by_id(registration_id)
-        if old_registration is None:
-            raise AppError(ErrorCode.NOT_FOUND)
-        if old_registration.student_id != student.id:
-            raise AppError(ErrorCode.FORBIDDEN)
-
-        old_section = old_registration.section
-        if old_section is None:
-            raise AppError(ErrorCode.NOT_FOUND)
-
-        if old_section.id == request.new_section_id:
-            # Đang ở đúng lớp này rồi, trả về luôn
-            result = RegistrationDto.model_validate(old_registration)
-            result.section.registered_by_me = True
-            return result
-
-        new_section = self.sections.get_by_id(request.new_section_id)
-        if new_section is None:
-            raise AppError(
-                ErrorCode.NOT_FOUND,
-                details=[field_error("newSectionId", "Lớp học phần mới không tồn tại")],
-            )
-
-        if new_section.subject_id != old_section.subject_id:
-            raise AppError(
-                ErrorCode.VALIDATION_ERROR,
-                details=[
-                    field_error(
-                        "newSectionId", "Chỉ được đổi sang lớp học phần của cùng một môn học"
-                    )
-                ],
-            )
-
-        if new_section.semester_id != old_section.semester_id:
-            raise AppError(
-                ErrorCode.VALIDATION_ERROR,
-                details=[
-                    field_error("newSectionId", "Lớp mới phải thuộc cùng học kỳ với lớp hiện tại")
-                ],
-            )
-
-        # Kiểm tra trùng lịch với các lớp khác (ngoại trừ lớp cũ đang muốn đổi)
-        conflicts = [
-            c
-            for c in self.registrations.find_schedule_conflicts(student.id, new_section)
-            if c.id != old_section.id
-        ]
-        if conflicts:
-            raise AppError(
-                ErrorCode.STUDENT_SCHEDULE_CONFLICT,
-                details=[
-                    field_error("sectionCode", f"Lớp {conflict.section_code} bị trùng lịch")
-                    for conflict in conflicts
-                ],
-            )
-
-        # Tăng sĩ số lớp mới (atomic)
-        if not self.sections.increment_enrollment_if_available(new_section.id):
-            raise AppError(ErrorCode.CLASS_FULL)
-
-        # Giảm sĩ số lớp cũ và cập nhật bản ghi đăng ký
-        self.sections.decrement_enrollment(old_section.id)
-        old_registration.section_id = new_section.id
-        self.db.commit()
-        self.db.expire_all()
-
-        loaded_registration = self.registrations.get_by_id(old_registration.id)
-        result = RegistrationDto.model_validate(loaded_registration)
-        result.section.registered_by_me = True
-        return result
 
     def list_mine(self, user: User, semester_id: int) -> ItemList[RegistrationDto]:
         student = self.students.get_by_user_id(user.id)

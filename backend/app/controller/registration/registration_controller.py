@@ -3,7 +3,6 @@ from fastapi import APIRouter, Query, Response, status
 from app.core.database import DbSession
 from app.dto.common import ItemList
 from app.dto.registration.registration import (
-    ChangeSectionRequest,
     RegisterRequest,
     Registration,
 )
@@ -18,7 +17,7 @@ router = APIRouter(prefix="/registrations", tags=["registration"])
     "",
     response_model=Registration,
     status_code=status.HTTP_201_CREATED,
-    summary="Đăng ký lớp học phần (UC005)",
+    summary="Đăng ký lớp (UC005)",
 )
 def register(body: RegisterRequest, user: StudentUser, db: DbSession):
     return RegistrationService(db).register(user, body)
@@ -43,14 +42,3 @@ def my_registrations(
 def cancel(registration_id: int, user: StudentUser, db: DbSession):
     RegistrationService(db).cancel(user, registration_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.put(
-    "/{registration_id}/change",
-    response_model=Registration,
-    summary="Đổi lớp học phần (UC006 - Atomic Change)",
-)
-def change_section(
-    registration_id: int, body: ChangeSectionRequest, user: StudentUser, db: DbSession
-):
-    return RegistrationService(db).change_section(user, registration_id, body)

@@ -99,9 +99,7 @@ def test_registration_portal_register_refresh_and_cancel_regression(client, db_s
     registered_items = mine_after_register.json()["items"]
     assert [item["id"] for item in registered_items] == [registration_id]
 
-    catalog_after_register = client.get(
-        "/api/sections", params=params, headers=student_headers
-    )
+    catalog_after_register = client.get("/api/sections", params=params, headers=student_headers)
     assert catalog_after_register.status_code == 200, catalog_after_register.text
     after_register = next(
         item for item in catalog_after_register.json()["items"] if item["id"] == section.id
@@ -126,9 +124,7 @@ def test_registration_portal_register_refresh_and_cancel_regression(client, db_s
     assert mine_after_cancel.status_code == 200, mine_after_cancel.text
     assert mine_after_cancel.json()["items"] == []
 
-    catalog_after_cancel = client.get(
-        "/api/sections", params=params, headers=student_headers
-    )
+    catalog_after_cancel = client.get("/api/sections", params=params, headers=student_headers)
     assert catalog_after_cancel.status_code == 200, catalog_after_cancel.text
     after_cancel = next(
         item for item in catalog_after_cancel.json()["items"] if item["id"] == section.id

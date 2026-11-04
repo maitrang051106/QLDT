@@ -15,7 +15,6 @@ from app.entity.registration.attendance import (
 from app.entity.registration.registration import Registration
 from app.entity.tuition.receipt import Receipt
 from app.entity.tuition.receipt_sequence import ReceiptSequence
-from app.entity.tuition.tuition_discount import TuitionDiscount
 from app.entity.tuition.tuition_installment import TuitionInstallment
 from app.entity.tuition.tuition_invoice import InvoiceStatus, TuitionInvoice
 from app.entity.tuition.tuition_invoice_item import TuitionInvoiceItem
@@ -39,7 +38,6 @@ __all__ = [
     "Student",
     "StudentGrade",
     "Subject",
-    "TuitionDiscount",
     "TuitionInstallment",
     "TuitionInvoice",
     "TuitionInvoiceItem",

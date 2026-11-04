@@ -10,7 +10,6 @@ from app.entity.catalog.subject import Subject
 from app.entity.registration.registration import Registration
 from app.entity.tuition.receipt import Receipt
 from app.entity.tuition.receipt_sequence import ReceiptSequence
-from app.entity.tuition.tuition_discount import TuitionDiscount
 from app.entity.tuition.tuition_installment import TuitionInstallment
 from app.entity.tuition.tuition_invoice import InvoiceStatus, TuitionInvoice
 from app.entity.tuition.tuition_invoice_item import TuitionInvoiceItem
@@ -52,59 +51,6 @@ class TuitionRepository(BaseRepository):
 
     def delete_rate(self, rate: TuitionRate) -> None:
         self.db.delete(rate)
-        self.db.flush()
-
-    # ==================== TUITION DISCOUNTS ====================
-    def list_discounts(
-        self, semester_id: int | None = None, student_id: int | None = None
-    ) -> list[TuitionDiscount]:
-        stmt = select(TuitionDiscount).options(
-            joinedload(TuitionDiscount.student).joinedload(Student.user),
-            joinedload(TuitionDiscount.semester),
-        )
-        if semester_id is not None:
-            stmt = stmt.where(TuitionDiscount.semester_id == semester_id)
-        if student_id is not None:
-            stmt = stmt.where(TuitionDiscount.student_id == student_id)
-        stmt = stmt.order_by(TuitionDiscount.id.desc())
-        return list(self.db.scalars(stmt).all())
-
-    def list_discounts_by_students(
-        self, semester_id: int, student_ids: list[int]
-    ) -> dict[int, list[TuitionDiscount]]:
-        if not student_ids:
-            return {}
-        stmt = (
-            select(TuitionDiscount)
-            .where(
-                TuitionDiscount.semester_id == semester_id,
-                TuitionDiscount.student_id.in_(student_ids),
-            )
-            .order_by(TuitionDiscount.id)
-        )
-        result: dict[int, list[TuitionDiscount]] = {}
-        for discount in self.db.scalars(stmt):
-            result.setdefault(discount.student_id, []).append(discount)
-        return result
-
-    def get_discount_by_id(self, discount_id: int) -> TuitionDiscount | None:
-        stmt = (
-            select(TuitionDiscount)
-            .options(
-                joinedload(TuitionDiscount.student).joinedload(Student.user),
-                joinedload(TuitionDiscount.semester),
-            )
-            .where(TuitionDiscount.id == discount_id)
-        )
-        return self.db.scalars(stmt).first()
-
-    def add_discount(self, discount: TuitionDiscount) -> TuitionDiscount:
-        self.db.add(discount)
-        self.db.flush()
-        return discount
-
-    def delete_discount(self, discount: TuitionDiscount) -> None:
-        self.db.delete(discount)
         self.db.flush()
 
     # ==================== TUITION INSTALLMENTS ====================

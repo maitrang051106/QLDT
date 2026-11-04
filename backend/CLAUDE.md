@@ -1,28 +1,30 @@
-# Backend Rules
+# Quy tắc Kiến trúc & Nghiệp vụ Backend
 
-- Runtime: Python 3.12+, FastAPI, SQLAlchemy 2, and Alembic; application package root is `app/`.
-- Start locally with `uvicorn app.main:app --reload` from `backend/`.
-- Authentication reads the canonical MySQL `USERS` table; production code must not fall back to fixture/mock users.
-- `db/schema.sql` and `db/seed/seed.sql` remain the database source of truth. ORM table identifiers and Alembic migrations must preserve their uppercase names and use database `qldt`.
-- Keep one ADMIN seed account only. Sample credentials are documented in `db/README.md`.
-- JWT access token lifetime is 3600 seconds; do not add refresh tokens unless the SRS/API contract changes.
-- `JWT_SECRET` is required and must be at least 32 characters. Semester credit limits are system-wide environment settings (`MIN_CREDITS_PER_SEMESTER=12`, `MAX_CREDITS_PER_SEMESTER=24` by default); maximum must be >= 1 and >= minimum. These are temporary defaults pending group confirmation.
-- The system operates on a single active registration semester (`2026.1`); endpoints default `semesterId` to it if omitted. Registration, cancellation, and section changes lock the student's row with `SELECT ... FOR UPDATE`; capacity changes use atomic conditional updates. Prerequisite and co-requisite checks are excluded.
-- All API routes use `/api`; JSON keys are camelCase and errors use the shared FE-BE envelope. Auth returns `accessToken` and a nested `user` object for FE compatibility.
-- Business modules belong in `app/{controller,service,repository,entity,dto}/{auth,catalog,registration,timetable}`; shared configuration and errors belong in `app/core/`, and authentication helpers belong in `app/security/`.
-- Catalog, registration, roster, and timetable services for UC002-UC009 are implemented with automated test coverage. Registration and cancellation enforce credit limits, ownership, and atomic capacity updates. UC006 section changes allow only another section of the same subject and semester; a failed change preserves the current registration.
-- Security coverage includes role checks, registration ownership/IDOR protection, and preventing password/hash leakage. Continue enforcing resource ownership in backend services; frontend route visibility is not an authorization boundary.
-- Academic records (UC010): only the assigned lecturer can view or update attendance and grades or export reports for a section. ADMIN configures section-specific grade columns; final grades require every component, normalize weighted scores to 10, and round to the nearest 0.5. Excel exports contain attendance and gradebook worksheets.
-- Run and migration commands are documented in `README.md` and `backend/README.md`; CI also builds and smoke-tests the Compose gateway stack.
-- `contracts/openapi.yaml` and `contracts/api-types.ts` are synchronized with backend routes and schemas.
+- **Nền tảng**: Python 3.12+, FastAPI, SQLAlchemy 2, Alembic; thư mục gốc của ứng dụng là `backend/app/`.
+- **Chạy local**: `uvicorn app.main:app --reload` từ thư mục `backend/`.
+- **Xác thực**: Đọc trực tiếp từ bảng `USERS` trong MySQL; code chạy thật tuyệt đối không dùng tài khoản giả lập (mock/fixture).
+- **Nguồn chuẩn CSDL**: `db/schema.sql` và `db/seed/seed.sql` (18 bảng). Các Entity ORM và Alembic migration phải giữ nguyên tên bảng viết hoa (`UPPER_SNAKE_CASE`) trên cơ sở dữ liệu `qldt`.
+- **Bảo mật & Cấu hình**:
+  - `JWT_SECRET` bắt buộc có độ dài tối thiểu 32 ký tự; thời hạn `accessToken` là `3600` giây (không dùng refresh token).
+  - Giới hạn tín chỉ học kỳ được cấu hình qua biến môi trường hệ thống (`MIN_CREDITS_PER_SEMESTER=12`, `MAX_CREDITS_PER_SEMESTER=24`).
+- **Học kỳ duy nhất & Đồng thời (Concurrency)**:
+  - Toàn hệ thống chỉ vận hành trên 1 học kỳ đang mở đăng ký duy nhất (`2026.1`); các API tự động lấy học kỳ này nếu client không truyền `semesterId`.
+  - Đăng ký lớp (`POST /api/registrations`) và hủy đăng ký (`DELETE /api/registrations/{id}`) khóa dòng sinh viên bằng `SELECT ... FOR UPDATE` và cập nhật sĩ số nguyên tử có điều kiện (`current_enrollment < max_capacity`).
+  - Khi sinh viên hủy đăng ký lớp, hệ thống kiểm tra quy tắc tối thiểu `12 TC` (`CREDIT_LIMIT_BELOW_MIN`) và tự động dọn dẹp các bản ghi điểm danh/điểm thành phần lẻ của sinh viên đó trong lớp vừa hủy.
+  - Không áp dụng điều kiện học phần tiên quyết, học phần song hành, API đổi lớp nguyên tử (`PUT /registrations/{id}/change`), gợi ý thời khóa biểu tự động hay miễn giảm học phí.
+- **Cấu trúc phân tầng**:
+  - Mã nguồn nghiệp vụ đặt tại `app/{controller,service,repository,entity,dto}/{auth,catalog,registration,timetable,tuition}`.
+  - Cấu hình và mã lỗi dùng chung đặt tại `app/core/`; bảo mật JWT/RBAC đặt tại `app/security/`.
+- **Hồ sơ học tập (UC010)**:
+  - Chỉ giảng viên được phân công phụ trách lớp mới có quyền xem/lưu điểm danh, nhập điểm và xuất file Excel cho lớp đó.
+  - `ADMIN` cấu hình từ 1–10 cột điểm cho từng lớp với tổng trọng số đúng bằng `100%`; cấu trúc điểm bị khóa sau khi giảng viên đã nhập điểm. Điểm tổng kết chỉ tính khi đủ mọi cột điểm, quy đổi về thang 10 và làm tròn đến `0.5` gần nhất.
+- **Học phí & Biên lai**:
+  - Tính học phí theo `tuition_credits` (TCHP) nhân với đơn giá hiệu lực (`TUITION_RATES`) theo thứ tự ưu tiên: `Khóa + Ngành` -> `Khóa` -> `Ngành` -> `Chung toàn trường`.
+  - Hỗ trợ cấu hình các đợt nộp (`TUITION_INSTALLMENTS`), thanh toán trực tuyến idempotent theo `idempotencyKey` và phát hành biên lai điện tử kèm tải PDF từ dữ liệu snapshot bất biến (`RECEIPTS`).
 
-Focused regression tests:
-- `pytest tests/test_concurrency_and_security.py` — concurrent capacity race, IDOR, password leakage, and role escalation.
-- `pytest tests/test_change_section.py tests/test_registration.py` — registration, cancellation, and atomic section changes.
-- `pytest tests/test_academic_records.py` — attendance, grade calculations, lecturer ownership, export content, and authentication.
+## Bộ kiểm thử trọng tâm
 
-The concurrency race test uses SQLite for repeatable automated coverage. Validate locking behavior against MySQL when testing the MySQL deployment.
-- Business modules belong in `app/{controller,service,repository,entity,dto}/{auth,catalog,registration,timetable,tuition}`; shared configuration and errors belong in `app/core/`, and authentication helpers belong in `app/security/`.
-- Catalog, registration, roster, and timetable business services for UC002-UC009 are fully implemented with automated test coverage. Registration and cancellation enforce credit limits and atomic capacity updates.
-- Run and migration commands are documented in `README.md` and `backend/README.md`; CI also builds and smoke-tests the Compose gateway stack.
-- `contracts/openapi.yaml` and `contracts/api-types.ts` describe the backend routes and schemas, including timetable conflict and tuition/receipt APIs.
+- `pytest backend/tests/test_concurrency_and_security.py` — Kiểm thử tranh chấp sĩ số đồng thời, chống IDOR, chống rò rỉ mật khẩu và leo thang đặc quyền.
+- `pytest backend/tests/test_registration.py` — Kiểm thử đăng ký lớp, hủy đăng ký, giới hạn `12–24 TC` và dọn dẹp dữ liệu điểm danh/điểm khi hủy.
+- `pytest backend/tests/test_academic_records.py` — Kiểm thử điểm danh, bảng điểm, quyền giảng viên phụ trách và xuất báo cáo Excel.
+- `pytest backend/tests/test_tuition_api.py backend/tests/test_tuition_calculation.py` — Kiểm thử đơn giá, đợt nộp, phát hành hóa đơn, thanh toán idempotent và xuất PDF biên lai.

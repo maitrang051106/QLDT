@@ -35,7 +35,6 @@ class TuitionInvoice(Base):
     __table_args__ = (
         UniqueConstraint("student_id", "semester_id", name="uq_invoice_student_semester"),
         CheckConstraint("total_tuition >= 0", name="total_tuition_non_negative"),
-        CheckConstraint("total_discount >= 0", name="total_discount_non_negative"),
         CheckConstraint("amount_due >= 0", name="amount_due_non_negative"),
         CheckConstraint("amount_paid >= 0", name="amount_paid_non_negative"),
         Index("idx_tuition_invoices_student_semester", "student_id", "semester_id"),
@@ -49,7 +48,6 @@ class TuitionInvoice(Base):
         BigInt, ForeignKey("SEMESTERS.semester_id", ondelete="RESTRICT"), nullable=False
     )
     total_tuition: Mapped[int] = mapped_column(BigInt, default=0, nullable=False)
-    total_discount: Mapped[int] = mapped_column(BigInt, default=0, nullable=False)
     amount_due: Mapped[int] = mapped_column(BigInt, default=0, nullable=False)
     amount_paid: Mapped[int] = mapped_column(BigInt, default=0, nullable=False)
     status: Mapped[InvoiceStatus] = mapped_column(

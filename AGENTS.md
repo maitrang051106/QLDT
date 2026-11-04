@@ -1,9 +1,9 @@
-# Agent Instructions
+# Quy tắc dành cho AI Agent
 
-Read [CLAUDE.md](CLAUDE.md) for the repository harness and source-of-truth rules. Frontend-specific work must also follow [frontend/CLAUDE.md](frontend/CLAUDE.md).
+Đọc [CLAUDE.md](CLAUDE.md) để nắm cấu trúc dự án và nguồn sự thật (source of truth). Khi làm việc với Frontend, đọc thêm [frontend/CLAUDE.md](frontend/CLAUDE.md); khi làm việc với Backend, đọc thêm [backend/CLAUDE.md](backend/CLAUDE.md).
 
-## Working agreement
+## Thỏa thuận làm việc
 
-- Ask if anything is implicit, ambiguous, or not clear before proceeding.
-- One person must not modify another team member's code or work without permission. If a test reveals a bug outside the current task's ownership, report the file, author/commit, reproduction, impact, and proposed fix to the user, then wait for approval before changing it.
-- If code outside the current task's ownership was changed inadvertently, revert it and report the change instead of leaving it in place.
+- Luôn hỏi lại người dùng nếu có bất kỳ yêu cầu nào ngầm định, mơ hồ hoặc chưa rõ ràng trước khi thực hiện.
+- Một thành viên không tự ý sửa code thuộc phạm vi của thành viên khác khi chưa được phép. Nếu phát hiện lỗi ngoài phạm vi nhiệm vụ hiện tại, hãy báo cáo rõ tên file, nguyên nhân tái hiện, mức độ ảnh hưởng và hướng sửa đề xuất rồi chờ phê duyệt.
+- Nếu vô tình làm thay đổi code ngoài phạm vi nhiệm vụ, phải hoàn tác (revert) và báo cáo lại thay vì để nguyên.

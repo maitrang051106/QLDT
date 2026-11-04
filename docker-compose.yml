@@ -42,6 +42,10 @@ services:
       db: { condition: service_healthy }
     expose: ["8000"]          # chỉ mạng nội bộ; bên ngoài đi qua gateway
 
+  frontend:
+    build: ./frontend
+    expose: ["80"]
+
   gateway:
     build: ./gateway
     environment:
@@ -52,10 +56,7 @@ services:
     ports: ["8080:80"]
     depends_on:
       backend: { condition: service_healthy }
-
-  # frontend:                # nhóm front-end bổ sung khi sẵn sàng; gateway đã định tuyến "/" tới đây
-  #   build: ./frontend
-  #   expose: ["80"]
+      frontend: { condition: service_healthy }
 
 volumes:
   dbdata:

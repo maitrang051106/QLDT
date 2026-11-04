@@ -35,7 +35,6 @@ class ErrorCode(str, Enum):
     PAYMENT_EXCEEDS_BALANCE = "PAYMENT_EXCEEDS_BALANCE"
     INVOICE_HAS_PAYMENTS = "INVOICE_HAS_PAYMENTS"
     INSTALLMENT_SUM_MISMATCH = "INSTALLMENT_SUM_MISMATCH"
-    DISCOUNT_EXCEEDS_TOTAL = "DISCOUNT_EXCEEDS_TOTAL"
     INVOICE_CANCELLED = "INVOICE_CANCELLED"
 
 
@@ -84,6 +83,5 @@ ERROR_SPECS: dict[ErrorCode, tuple[int, str]] = {
         400,
         "Tổng tỷ lệ hoặc số tiền các đợt không khớp với số phải nộp",
     ),
-    ErrorCode.DISCOUNT_EXCEEDS_TOTAL: (400, "Số tiền miễn giảm vượt quá tổng học phí"),
     ErrorCode.INVOICE_CANCELLED: (409, "Hóa đơn học phí đã bị hủy"),
 }

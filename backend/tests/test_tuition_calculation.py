@@ -4,7 +4,6 @@ from decimal import Decimal
 import pytest
 
 from app.service.tuition.tuition_calculator import (
-    calculate_discount,
     calculate_installments,
     calculate_subject_tuition,
     resolve_tuition_rate,
@@ -22,32 +21,10 @@ def test_number_to_vietnamese_words():
 
 
 def test_calculate_subject_tuition_decimal_and_rounding():
-    # Môn 3 TCHP đơn giá 450.000
     assert calculate_subject_tuition(3, 450000) == 1350000
-    # Môn 1.5 TCHP đơn giá 450.000
     assert calculate_subject_tuition(Decimal("1.5"), 450000) == 675000
-    # Môn 3.6 TCHP đơn giá 478.125 -> 1721250
     assert calculate_subject_tuition(Decimal("3.6"), 478125) == 1721250
-    # Kiểm tra làm tròn xuống đồng
     assert calculate_subject_tuition(Decimal("1.33"), 10000) == 13300
-
-
-def test_calculate_discount_order_and_bounds():
-    total = 10000000  # 10 triệu
-    # Giảm 30% và cố định 1 triệu -> Giảm 3tr + 1tr = 4tr; Cần nộp 6tr
-    discount, due = calculate_discount(
-        total, discount_percent=Decimal("30.00"), fixed_amount=1000000
-    )
-    assert discount == 4000000
-    assert due == 6000000
-
-    with pytest.raises(ValueError, match="vượt quá"):
-        calculate_discount(total, discount_percent=Decimal("80.00"), fixed_amount=5000000)
-
-    # Không miễn giảm
-    discount, due = calculate_discount(total)
-    assert discount == 0
-    assert due == 10000000
 
 
 def test_calculate_installments_rounding_remainder():
@@ -64,7 +41,6 @@ def test_calculate_installments_rounding_remainder():
     assert results[2]["allocatedAmount"] == 2000000
     assert sum(r["allocatedAmount"] for r in results) == amount_due
 
-    # Trường hợp số lẻ, phần dư dồn vào đợt cuối
     amount_due_odd = 10000001
     specs_odd = [
         {"installmentOrder": 1, "percentage": Decimal("33.33")},
@@ -111,12 +87,8 @@ def test_resolve_tuition_rate_priority():
 
     rates = [r_general, r_cohort, r_major, r_specific]
 
-    # Khớp cụ thể nhất (K66, CNTT)
     assert resolve_tuition_rate(rates, "K66", "CNTT").price == 550000
-    # Khớp theo cohort khi major khác
     assert resolve_tuition_rate(rates, "K66", "CoKhi").price == 480000
-    # Khớp theo major khi cohort khác
     assert resolve_tuition_rate(rates, "K67", "CNTT").price == 520000
-    # Khớp bản ghi chung khi cả 2 không có bản ghi cụ thể
     assert resolve_tuition_rate(rates, "K67", "Dien").price == 450000
     assert resolve_tuition_rate(rates, "K66", "CNTT", date(2026, 7, 1)).price == 450000

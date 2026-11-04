@@ -13,8 +13,6 @@ from app.dto.tuition.tuition import (
     InvoiceGenerateResult,
     PaymentCreateRequest,
     ReceiptDto,
-    TuitionDiscountCreateRequest,
-    TuitionDiscountResponse,
     TuitionInstallmentResponse,
     TuitionInstallmentsPutRequest,
     TuitionInvoiceDto,
@@ -107,31 +105,6 @@ def update_tuition_rate(
 @admin_router.delete("/tuition-rates/{rate_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_tuition_rate(rate_id: int, _admin: AdminUser, db: DbSession):
     TuitionService(db).delete_rate(rate_id)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@admin_router.get("/tuition/discounts", response_model=ItemList[TuitionDiscountResponse])
-def list_tuition_discounts(
-    _admin: AdminUser,
-    db: DbSession,
-    semester_id: Annotated[int | None, Query(alias="semesterId", ge=1)] = None,
-    student_id: Annotated[int | None, Query(alias="studentId", ge=1)] = None,
-):
-    return ItemList(items=TuitionService(db).list_discounts(semester_id, student_id))
-
-
-@admin_router.post(
-    "/tuition/discounts",
-    response_model=TuitionDiscountResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-def create_tuition_discount(request: TuitionDiscountCreateRequest, admin: AdminUser, db: DbSession):
-    return TuitionService(db).create_discount(request, admin.full_name)
-
-
-@admin_router.delete("/tuition/discounts/{discount_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_tuition_discount(discount_id: int, _admin: AdminUser, db: DbSession):
-    TuitionService(db).delete_discount(discount_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

@@ -40,28 +40,6 @@ class TuitionRateUpdateRequest(CamelModel):
     description: str | None = None
 
 
-class TuitionDiscountResponse(CamelModel):
-    id: int
-    student_id: int
-    student_code: str | None = None
-    student_name: str | None = None
-    semester_id: int
-    discount_percent: float
-    fixed_amount: int
-    reason: str
-    granted_by: str
-    created_at: VNDateTime
-
-
-class TuitionDiscountCreateRequest(CamelModel):
-    student_id: int | None = None
-    student_code: str | None = None
-    semester_id: int
-    discount_percent: Decimal = Field(default=Decimal("0.00"), ge=0, le=100)
-    fixed_amount: int = Field(default=0, ge=0)
-    reason: str = Field(..., min_length=1)
-
-
 class TuitionInstallmentResponse(CamelModel):
     id: int
     semester_id: int
@@ -123,14 +101,12 @@ class TuitionInvoiceDto(CamelModel):
     semester_id: int
     semester_code: str | None = None
     total_tuition: int
-    total_discount: int
     amount_due: int
     amount_paid: int
     balance: int
     status: str
     is_stale: bool
     items: list[TuitionInvoiceItemDto] = Field(default_factory=list)
-    discounts: list[TuitionDiscountResponse] = Field(default_factory=list)
     installments: list[TuitionInstallmentResponse] = Field(default_factory=list)
     payments: list[TuitionPaymentDto] = Field(default_factory=list)
     created_at: VNDateTime

@@ -1,7 +1,7 @@
 # ============================================================================
 # CI/CD – Hệ thống Quản lý & Đăng ký Học phần
 #
-#   PR / push  ->  backend (ruff, pytest, migration)  ->  integration (compose + smoke test)
+#   PR / push  ->  backend & frontend  ->  integration (compose + smoke test)
 #   push main hoặc tag v*  ->  publish (đẩy image lên GHCR)  ->  deploy (tùy chọn, SSH)
 #
 # Deploy mặc định TẮT. Bật bằng: Settings > Secrets and variables > Actions > Variables:
@@ -82,9 +82,31 @@ jobs:
         run: alembic check
 
   # --------------------------------------------------------------------------
+  frontend:
+    name: Frontend – typecheck & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cài thư viện
+        run: npm ci
+
+      - name: Typecheck & build
+        run: npm run build
+
+  # --------------------------------------------------------------------------
   integration:
     name: Tích hợp – compose + gateway + smoke test
-    needs: backend
+    needs: [backend, frontend]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -104,13 +126,13 @@ jobs:
 
       - name: Build image và khởi động database
         run: |
-          docker compose build backend gateway
+          docker compose build backend frontend gateway
           docker compose up -d --wait --wait-timeout 240 db
 
-      - name: Migration trước khi khởi động backend
+      - name: Migration trước khi khởi động hệ thống
         run: |
           docker compose run --rm backend alembic upgrade head
-          docker compose up -d --wait --wait-timeout 240 backend gateway
+          docker compose up -d --wait --wait-timeout 240 backend frontend gateway
 
       - name: Smoke test qua gateway
         run: python3 gateway/smoke_test.py http://localhost:8080
@@ -134,7 +156,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        service: [backend, gateway]
+        service: [backend, frontend, gateway]
     steps:
       - uses: actions/checkout@v7
 
@@ -211,5 +233,5 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --wait db
             docker compose -f docker-compose.prod.yml run --rm backend alembic upgrade head
-            docker compose -f docker-compose.prod.yml up -d --wait backend gateway
+            docker compose -f docker-compose.prod.yml up -d --wait backend frontend gateway
             docker compose -f docker-compose.prod.yml exec -T gateway wget -qO- http://127.0.0.1/health/backend

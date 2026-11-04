@@ -228,7 +228,6 @@ def render_receipt_pdf(receipt: dict[str, Any]) -> bytes:
             course_table,
             Spacer(1, 4 * mm),
             Paragraph(f"Tổng học phí: {_money(data['totalTuition'])}", styles["ReceiptRight"]),
-            Paragraph(f"Miễn giảm: {_money(data['totalDiscount'])}", styles["ReceiptRight"]),
             Paragraph(f"Số phải nộp: {_money(data['amountDue'])}", styles["ReceiptRight"]),
             Paragraph(
                 f"Số tiền đợt này: <b>{_money(data['paymentAmount'])}</b>", styles["ReceiptRight"]

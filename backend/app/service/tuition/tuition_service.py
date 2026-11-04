@@ -14,8 +14,6 @@ from app.dto.tuition.tuition import (
     InvoiceGenerateResult,
     PaymentCreateRequest,
     ReceiptDto,
-    TuitionDiscountCreateRequest,
-    TuitionDiscountResponse,
     TuitionInstallmentResponse,
     TuitionInstallmentsPutRequest,
     TuitionInvoiceDto,
@@ -31,7 +29,6 @@ from app.entity.auth.user import Role, User
 from app.entity.catalog.semester import Semester
 from app.entity.catalog.subject import Subject
 from app.entity.tuition.receipt import Receipt
-from app.entity.tuition.tuition_discount import TuitionDiscount
 from app.entity.tuition.tuition_installment import TuitionInstallment
 from app.entity.tuition.tuition_invoice import InvoiceStatus, TuitionInvoice
 from app.entity.tuition.tuition_invoice_item import TuitionInvoiceItem
@@ -42,7 +39,6 @@ from app.repository.catalog.semester_repository import SemesterRepository
 from app.repository.tuition.tuition_repository import TuitionRepository
 from app.service.catalog.semester_service import SemesterService
 from app.service.tuition.tuition_calculator import (
-    calculate_discount,
     calculate_installments,
     calculate_subject_tuition,
     resolve_tuition_rate,
@@ -194,79 +190,6 @@ class TuitionService:
         self.repo.delete_rate(entity)
         self.db.commit()
 
-    # ==================== TUITION DISCOUNTS ====================
-    def list_discounts(
-        self, semester_id: int | None = None, student_id: int | None = None
-    ) -> list[TuitionDiscountResponse]:
-        entities = self.repo.list_discounts(semester_id, student_id)
-        return [
-            TuitionDiscountResponse(
-                id=d.id,
-                student_id=d.student_id,
-                student_code=d.student.student_code if d.student else None,
-                student_name=d.student.full_name if d.student else None,
-                semester_id=d.semester_id,
-                discount_percent=d.discount_percent,
-                fixed_amount=d.fixed_amount,
-                reason=d.reason,
-                granted_by=d.granted_by,
-                created_at=to_vn(d.created_at),
-            )
-            for d in entities
-        ]
-
-    def create_discount(
-        self, request: TuitionDiscountCreateRequest, granted_by: str
-    ) -> TuitionDiscountResponse:
-        student: Student | None = None
-        if request.student_id is not None:
-            student = self.students.get_by_id(request.student_id)
-        elif request.student_code:
-            student = self.students.get_by_code(request.student_code)
-
-        if student is None:
-            raise AppError(
-                ErrorCode.NOT_FOUND, details=[field_error("studentId", "Sinh viên không tồn tại")]
-            )
-
-        semester = self.semesters.get_by_id(request.semester_id)
-        if semester is None:
-            raise AppError(
-                ErrorCode.NOT_FOUND, details=[field_error("semesterId", "Học kỳ không tồn tại")]
-            )
-
-        entity = TuitionDiscount(
-            student_id=student.id,
-            semester_id=request.semester_id,
-            discount_percent=request.discount_percent,
-            fixed_amount=request.fixed_amount,
-            reason=request.reason,
-            granted_by=granted_by,
-        )
-        self.repo.add_discount(entity)
-        self.repo.mark_invoices_stale(request.semester_id, student.id)
-        self.db.commit()
-        return TuitionDiscountResponse(
-            id=entity.id,
-            student_id=entity.student_id,
-            student_code=student.student_code,
-            student_name=student.full_name,
-            semester_id=entity.semester_id,
-            discount_percent=entity.discount_percent,
-            fixed_amount=entity.fixed_amount,
-            reason=entity.reason,
-            granted_by=entity.granted_by,
-            created_at=to_vn(entity.created_at),
-        )
-
-    def delete_discount(self, discount_id: int) -> None:
-        entity = self.repo.get_discount_by_id(discount_id)
-        if entity is None:
-            raise AppError(ErrorCode.NOT_FOUND)
-        self.repo.mark_invoices_stale(entity.semester_id, entity.student_id)
-        self.repo.delete_discount(entity)
-        self.db.commit()
-
     # ==================== TUITION INSTALLMENTS ====================
     def list_installments(self, semester_id: int) -> list[TuitionInstallmentResponse]:
         entities = self.repo.list_installments(semester_id)
@@ -302,7 +225,6 @@ class TuitionService:
                 details=[field_error("installments", "Thứ tự các đợt nộp không được trùng")],
             )
 
-        # Kiểm tra tổng % nếu toàn bộ là %
         has_percentage = [i.percentage for i in request.installments if i.percentage is not None]
         has_fixed = [i.fixed_amount for i in request.installments if i.fixed_amount is not None]
         if has_percentage and has_fixed:
@@ -359,16 +281,13 @@ class TuitionService:
         items_to_add, total_tuition = self._build_invoice_items(
             student, semester, rates, registered_subjects
         )
-        total_discount, amount_due = self._calculate_discount(
-            total_tuition, self.repo.list_discounts(semester.id, student.id)
-        )
+        amount_due = total_tuition
 
         if existing is None:
             invoice = TuitionInvoice(
                 student_id=student.id,
                 semester_id=semester.id,
                 total_tuition=total_tuition,
-                total_discount=total_discount,
                 amount_due=amount_due,
                 amount_paid=0,
                 status=InvoiceStatus.UNPAID,
@@ -378,7 +297,6 @@ class TuitionService:
             self.repo.add_invoice(invoice)
         else:
             existing.total_tuition = total_tuition
-            existing.total_discount = total_discount
             existing.amount_due = amount_due
             existing.is_stale = False
             self.repo.delete_invoice_items(existing.id)
@@ -424,26 +342,6 @@ class TuitionService:
                 )
         return items, total
 
-    @staticmethod
-    def _calculate_discount(
-        total_tuition: int, discounts: list[TuitionDiscount]
-    ) -> tuple[int, int]:
-        percent = sum((discount.discount_percent for discount in discounts), Decimal("0"))
-        fixed_amount = sum(discount.fixed_amount for discount in discounts)
-        percent_discount = int(Decimal(total_tuition) * percent / Decimal("100"))
-        total_discount = percent_discount + fixed_amount
-        if total_discount > total_tuition:
-            raise AppError(
-                ErrorCode.DISCOUNT_EXCEEDS_TOTAL,
-                details=[
-                    field_error(
-                        "discounts",
-                        "Tổng miễn giảm phần trăm và số tiền cố định vượt quá tổng học phí",
-                    )
-                ],
-            )
-        return calculate_discount(total_tuition, percent, fixed_amount)
-
     def generate_invoices(self, request: InvoiceGenerateRequest) -> InvoiceGenerateResult:
         """Tạo/tính lại hóa đơn hàng loạt bằng truy vấn gom nhóm tránh N+1."""
         semester = self.semesters.get_by_id(request.semester_id)
@@ -466,9 +364,6 @@ class TuitionService:
         student_subjects_map = self.repo.get_registered_students_and_subjects(
             request.semester_id, student_id=request.student_id
         )
-        discounts_by_student = self.repo.list_discounts_by_students(
-            request.semester_id, student_ids
-        )
         existing_by_student = {
             invoice.student_id: invoice
             for invoice in self.repo.list_invoices_for_students_for_update(
@@ -484,9 +379,7 @@ class TuitionService:
         for student in students:
             subjects = student_subjects_map.get(student.id, [])
             items, total_tuition = self._build_invoice_items(student, semester, rates, subjects)
-            total_discount, amount_due = self._calculate_discount(
-                total_tuition, discounts_by_student.get(student.id, [])
-            )
+            amount_due = total_tuition
             existing = existing_by_student.get(student.id)
             if existing and (
                 existing.amount_paid > 0 or existing.status == InvoiceStatus.CANCELLED
@@ -498,7 +391,6 @@ class TuitionService:
                     student_id=student.id,
                     semester_id=semester.id,
                     total_tuition=total_tuition,
-                    total_discount=total_discount,
                     amount_due=amount_due,
                     amount_paid=0,
                     status=InvoiceStatus.UNPAID,
@@ -508,7 +400,6 @@ class TuitionService:
             else:
                 invoice = existing
                 invoice.total_tuition = total_tuition
-                invoice.total_discount = total_discount
                 invoice.amount_due = amount_due
                 invoice.is_stale = False
                 invoices_to_update.append(invoice)
@@ -547,7 +438,6 @@ class TuitionService:
                 ErrorCode.NOT_FOUND, details=[field_error("semesterId", "Học kỳ không tồn tại")]
             )
 
-        # Nếu chưa có hóa đơn nhưng sinh viên đã đăng ký môn, thử sinh tự động
         if invoice is None:
             subj_map = self.repo.get_registered_students_and_subjects(semester_id, student.id)
             subjects = subj_map.get(student.id, [])
@@ -560,7 +450,6 @@ class TuitionService:
                 invoice = self.repo.get_invoice(student.id, semester_id)
 
         if invoice is None:
-            # Trả về DTO rỗng trạng thái UNPAID
             return TuitionInvoiceDto(
                 id=0,
                 student_id=student.id,
@@ -571,21 +460,18 @@ class TuitionService:
                 semester_id=semester_id,
                 semester_code=semester.semester_code,
                 total_tuition=0,
-                total_discount=0,
                 amount_due=0,
                 amount_paid=0,
                 balance=0,
                 status="UNPAID",
                 is_stale=False,
                 items=[],
-                discounts=[],
                 installments=[],
                 payments=[],
                 created_at=now_vn(),
                 updated_at=now_vn(),
             )
 
-        # Tính đợt nộp và trạng thái
         installments = self.repo.list_installments(semester_id)
         inst_specs = [
             {
@@ -646,23 +532,6 @@ class TuitionService:
                 )
             )
 
-        discounts = self.repo.list_discounts(semester_id, student.id)
-        discount_dtos = [
-            TuitionDiscountResponse(
-                id=d.id,
-                student_id=d.student_id,
-                student_code=student.student_code,
-                student_name=student.full_name,
-                semester_id=d.semester_id,
-                discount_percent=d.discount_percent,
-                fixed_amount=d.fixed_amount,
-                reason=d.reason,
-                granted_by=d.granted_by,
-                created_at=to_vn(d.created_at),
-            )
-            for d in discounts
-        ]
-
         items_dtos = [
             TuitionInvoiceItemDto(
                 id=item.id,
@@ -700,14 +569,12 @@ class TuitionService:
             semester_id=invoice.semester_id,
             semester_code=invoice.semester.semester_code if invoice.semester else "",
             total_tuition=invoice.total_tuition,
-            total_discount=invoice.total_discount,
             amount_due=invoice.amount_due,
             amount_paid=invoice.amount_paid,
             balance=balance,
             status=invoice.status.value,
             is_stale=invoice.is_stale,
             items=items_dtos,
-            discounts=discount_dtos,
             installments=installment_dtos,
             payments=payments_dtos,
             created_at=to_vn(invoice.created_at),
@@ -721,14 +588,12 @@ class TuitionService:
         if student is None:
             raise AppError(ErrorCode.FORBIDDEN)
 
-        # 1. Kiểm tra idempotency key trước
         existing_payment = self.repo.get_payment_by_key(student.id, request.idempotency_key)
         if existing_payment and existing_payment.receipt:
             return self._receipt_dto(existing_payment.receipt, student)
 
         semester_id = SemesterService(self.db).get_current().id
 
-        # 2. Khóa dòng hóa đơn FOR UPDATE
         invoice = self.repo.get_invoice_by_student_semester_for_update(student.id, semester_id)
         if invoice is None:
             raise AppError(ErrorCode.INVOICE_NOT_FOUND)
@@ -801,7 +666,6 @@ class TuitionService:
                 ],
             )
 
-        # 3. Tạo thanh toán
         payment = TuitionPayment(
             invoice_id=invoice.id,
             student_id=student.id,
@@ -812,19 +676,16 @@ class TuitionService:
         )
         self.repo.add_payment(payment)
 
-        # 4. Cập nhật số tiền đã nộp và trạng thái hóa đơn
         invoice.amount_paid += request.amount
         if invoice.amount_paid == invoice.amount_due:
             invoice.status = InvoiceStatus.PAID
         else:
             invoice.status = InvoiceStatus.PARTIALLY_PAID
 
-        # 5. Cấp số biên lai tuần tự có khóa dòng
         semester = self.semesters.get_by_id(semester_id)
         semester_code = semester.semester_code if semester else "2026.1"
         receipt_no = self.repo.next_receipt_number(semester_id, semester_code)
 
-        # 6. Tạo snapshot bất biến cho biên lai
         snapshot_items = [
             {
                 "subjectCode": item.subject_code,
@@ -846,7 +707,6 @@ class TuitionService:
             "semesterName": semester.name if semester else "",
             "items": snapshot_items,
             "totalTuition": invoice.total_tuition,
-            "totalDiscount": invoice.total_discount,
             "amountDue": invoice.amount_due,
             "paymentAmount": request.amount,
             "cumulativePaid": invoice.amount_paid,
@@ -962,14 +822,12 @@ class TuitionService:
                 semester_id=inv.semester_id,
                 semester_code=inv.semester.semester_code if inv.semester else "",
                 total_tuition=inv.total_tuition,
-                total_discount=inv.total_discount,
                 amount_due=inv.amount_due,
                 amount_paid=inv.amount_paid,
                 balance=max(0, inv.amount_due - inv.amount_paid),
                 status=inv.status.value,
                 is_stale=inv.is_stale,
                 items=[],
-                discounts=[],
                 installments=[],
                 payments=[],
                 created_at=to_vn(inv.created_at),

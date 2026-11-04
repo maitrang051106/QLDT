@@ -38,6 +38,9 @@ check("không lộ phiên bản nginx", "nginx/" not in headers.get("Server", ""
 status, _, body = call("/health/backend")
 check("backend /health qua gateway = 200", status == 200, f"{status} {body}")
 
+status, _, body = call("/")
+check("frontend / qua gateway = 200 HTML", status == 200 and "<div id=\"root\">" in body, f"{status}")
+
 status, _, body = call("/api/auth/me")
 payload = json.loads(body) if body.startswith("{") else {}
 check("/api/auth/me không token = 401 UNAUTHORIZED (lỗi của backend đi nguyên vẹn)",

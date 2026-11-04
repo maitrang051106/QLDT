@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { CalendarOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Button, Empty, InputNumber, Select, Spin } from "antd";
+import { Alert, Button, Empty, InputNumber, Spin, Tag } from "antd";
 import api, { readApiError, requireItems, type UserRole } from "../../shared/api/client";
-import type { CurrentSemester, Semester } from "../../shared/api/api-types";
+import type { CurrentSemester } from "../../shared/api/api-types";
 
 interface TimetableEntry {
   date: string;
@@ -10,6 +11,9 @@ interface TimetableEntry {
   startPeriod: number;
   endPeriod: number;
   sectionCode: string;
+  subjectName?: string;
+  roomCode?: string;
+  lecturerName?: string;
   subject?: { name: string } | null;
   room?: { roomCode: string } | null;
   lecturer?: { fullName: string } | null;
@@ -21,30 +25,24 @@ interface ItemsResponse<T> {
 
 const dayColumns = [2, 3, 4, 5, 6, 7, 8];
 const dayNames: Record<number, string> = {
-  2: "Thứ hai", 3: "Thứ ba", 4: "Thứ tư", 5: "Thứ năm",
-  6: "Thứ sáu", 7: "Thứ bảy", 8: "Chủ nhật",
+  2: "Thứ hai",
+  3: "Thứ ba",
+  4: "Thứ tư",
+  5: "Thứ năm",
+  6: "Thứ sáu",
+  7: "Thứ bảy",
+  8: "Chủ nhật",
 };
 
 export default function TimetablePage({ role }: { role: UserRole }) {
-  const [semesterId, setSemesterId] = useState<number>();
   const [week, setWeek] = useState<number>();
   const isLecturer = role === "LECTURER";
-
-  const semestersQuery = useQuery({
-    queryKey: ["semesters"],
-    queryFn: async () => requireItems<Semester>((await api.get<ItemsResponse<Semester>>("/semesters")).data),
-  });
 
   const currentSemesterQuery = useQuery({
     queryKey: ["current-semester"],
     queryFn: async () => (await api.get<CurrentSemester>("/semesters/current")).data,
   });
-
-  useEffect(() => {
-    if (semesterId === undefined && currentSemesterQuery.data?.id !== undefined) {
-      setSemesterId(currentSemesterQuery.data.id);
-    }
-  }, [currentSemesterQuery.data, semesterId]);
+  const semesterId = currentSemesterQuery.data?.id;
 
   useEffect(() => {
     if (week === undefined && currentSemesterQuery.data?.currentWeek != null) {
@@ -76,38 +74,76 @@ export default function TimetablePage({ role }: { role: UserRole }) {
   return (
     <>
       <div className="feature-toolbar">
-        <Select
-          aria-label="Học kỳ"
-          className="semester-select"
-          placeholder="Chọn học kỳ"
-          loading={semestersQuery.isLoading}
-          value={semesterId}
-          options={(semestersQuery.data ?? []).map((semester) => ({ value: semester.id, label: `${semester.semesterCode} · ${semester.name}` }))}
-          onChange={setSemesterId}
-        />
+        <Tag icon={<CalendarOutlined />} color="processing">
+          Học kỳ hiện tại:{" "}
+          {currentSemesterQuery.data
+            ? `${currentSemesterQuery.data.semesterCode} · ${currentSemesterQuery.data.name}`
+            : "2026.1"}
+        </Tag>
         <div className="week-control">
-          <Button aria-label="Tuần trước" onClick={() => changeWeek((week ?? 1) - 1)}>‹</Button>
-          <InputNumber aria-label="Tuần" min={1} value={week} onChange={(value) => value && changeWeek(value)} />
-          <Button aria-label="Tuần sau" onClick={() => changeWeek((week ?? 1) + 1)}>›</Button>
-          <Button onClick={() => setWeek(currentSemesterQuery.data?.currentWeek ?? 1)}>Tuần hiện tại</Button>
+          <Button aria-label="Tuần trước" onClick={() => changeWeek((week ?? 1) - 1)}>
+            ‹
+          </Button>
+          <InputNumber
+            aria-label="Tuần"
+            min={1}
+            value={week}
+            onChange={(value) => value && changeWeek(value)}
+          />
+          <Button aria-label="Tuần sau" onClick={() => changeWeek((week ?? 1) + 1)}>
+            ›
+          </Button>
+          <Button onClick={() => setWeek(currentSemesterQuery.data?.currentWeek ?? 1)}>
+            Tuần hiện tại
+          </Button>
         </div>
       </div>
 
-      {(semestersQuery.isError || currentSemesterQuery.isError) && (
-        <Alert type="error" showIcon message="Không tải được thông tin học kỳ." description="Kiểm tra kết nối rồi tải lại trang." />
+      {currentSemesterQuery.isError && (
+        <Alert
+          type="error"
+          showIcon
+          message="Không tải được thông tin học kỳ."
+          description="Kiểm tra kết nối rồi tải lại trang."
+        />
       )}
-      {timetableQuery.isLoading && <div className="feature-loading"><Spin /></div>}
+      {timetableQuery.isLoading && (
+        <div className="feature-loading">
+          <Spin />
+        </div>
+      )}
       {timetableQuery.isError && (
         <Alert
           type="error"
           showIcon
-          message={timetableError?.error === "INVALID_WEEK" ? "Tuần được chọn không hợp lệ." : "Không tải được thời khóa biểu."}
-          description={timetableError?.error === "INVALID_WEEK" ? "Đã chuyển về tuần hiện tại để tải lại." : undefined}
-          action={<Button size="small" onClick={() => timetableError?.error === "INVALID_WEEK" ? setWeek(currentSemesterQuery.data?.currentWeek ?? 1) : void timetableQuery.refetch()}>Thử lại</Button>}
+          message={
+            timetableError?.error === "INVALID_WEEK"
+              ? "Tuần được chọn không hợp lệ."
+              : "Không tải được thời khóa biểu."
+          }
+          description={
+            timetableError?.error === "INVALID_WEEK"
+              ? "Đã chuyển về tuần hiện tại để tải lại."
+              : undefined
+          }
+          action={
+            <Button
+              size="small"
+              onClick={() =>
+                timetableError?.error === "INVALID_WEEK"
+                  ? setWeek(currentSemesterQuery.data?.currentWeek ?? 1)
+                  : void timetableQuery.refetch()
+              }
+            >
+              Thử lại
+            </Button>
+          }
         />
       )}
       {!timetableQuery.isLoading && !timetableQuery.isError && entries.length === 0 && (
-        <div className="feature-empty"><Empty description="Không có lịch học trong tuần này." /></div>
+        <div className="feature-empty">
+          <Empty description="Không có lịch học trong tuần này." />
+        </div>
       )}
       {entries.length > 0 && (
         <div className="timetable-scroll">
@@ -120,7 +156,11 @@ export default function TimetablePage({ role }: { role: UserRole }) {
               </div>
             ))}
             {Array.from({ length: 12 }, (_, index) => (
-              <div className="timetable-period" key={index + 1} style={{ gridColumn: 1, gridRow: index + 2 }}>
+              <div
+                className="timetable-period"
+                key={index + 1}
+                style={{ gridColumn: 1, gridRow: index + 2 }}
+              >
                 {index + 1}
               </div>
             ))}
@@ -134,10 +174,18 @@ export default function TimetablePage({ role }: { role: UserRole }) {
                 }}
               >
                 <strong>{entry.sectionCode}</strong>
-                {entry.subject?.name && <span>{entry.subject.name}</span>}
-                <span>Tiết {entry.startPeriod}-{entry.endPeriod}</span>
-                {entry.room?.roomCode && <span>{entry.room.roomCode}</span>}
-                {isLecturer && entry.lecturer?.fullName && <span>{entry.lecturer.fullName}</span>}
+                {(entry.subjectName ?? entry.subject?.name) && (
+                  <span>{entry.subjectName ?? entry.subject?.name}</span>
+                )}
+                <span>
+                  Tiết {entry.startPeriod}-{entry.endPeriod}
+                </span>
+                {(entry.roomCode ?? entry.room?.roomCode) && (
+                  <span>{entry.roomCode ?? entry.room?.roomCode}</span>
+                )}
+                {isLecturer && (entry.lecturerName ?? entry.lecturer?.fullName) && (
+                  <span>{entry.lecturerName ?? entry.lecturer?.fullName}</span>
+                )}
               </article>
             ))}
           </div>

@@ -20,34 +20,6 @@ def calculate_subject_tuition(
     return int(tc_dec * rate_dec)
 
 
-def calculate_discount(
-    total_tuition: int,
-    discount_percent: Decimal | float | str = Decimal("0.00"),
-    fixed_amount: int = 0,
-) -> tuple[int, int]:
-    """Tính miễn giảm học phí và số tiền phải nộp.
-
-    Quy tắc:
-    - Áp phần trăm trước rồi mới trừ số tiền cố định.
-    - Làm tròn xuống đến đồng.
-    - Tổng miễn giảm không vượt quá tổng học phí.
-    Trả về (total_discount, amount_due).
-    """
-    if total_tuition <= 0:
-        return 0, 0
-
-    pct_dec = Decimal(str(discount_percent))
-    total_dec = Decimal(str(total_tuition))
-
-    percent_discount = int(total_dec * pct_dec / Decimal("100"))
-    combined = percent_discount + int(fixed_amount)
-    if combined > total_tuition:
-        raise ValueError("Tổng miễn giảm vượt quá tổng học phí")
-    total_discount = max(0, combined)
-    amount_due = total_tuition - total_discount
-    return total_discount, amount_due
-
-
 def calculate_installments(
     amount_due: int,
     installment_specs: list[dict[str, Any]],

@@ -235,10 +235,6 @@ export interface RegisterRequest {
   sectionId: number;
 }
 
-export interface ChangeSectionRequest {
-  newSectionId: number;
-}
-
 export interface Registration {
   id: number;
   registeredAt: string; // ISO 8601 with +07:00
@@ -345,6 +341,8 @@ export interface GradeUpdateItem {
 
 export interface GradeUpdateRequest {
   items: GradeUpdateItem[];
+}
+
 export interface ConflictRange {
   start: number;
   end: number;
@@ -375,16 +373,8 @@ export interface ScheduleSlot {
   lecturerId?: number | null;
 }
 
-export interface TimetableSuggestion {
-  [key: string]: unknown;
-}
-
-export interface TimetableSuggestions {
-  items: TimetableSuggestion[];
-}
-
 // ==========================================
-// 8. Tuition and Receipts
+// 9. Tuition and Receipts
 // ==========================================
 
 export type InvoiceStatus = "UNPAID" | "PARTIALLY_PAID" | "PAID" | "CANCELLED";
@@ -412,28 +402,6 @@ export interface TuitionRateCreateRequest {
 }
 
 export type TuitionRateUpdateRequest = Omit<TuitionRateCreateRequest, "semesterId">;
-
-export interface TuitionDiscount {
-  id: number;
-  studentId: number;
-  studentCode: string | null;
-  studentName: string | null;
-  semesterId: number;
-  discountPercent: number;
-  fixedAmount: number;
-  reason: string;
-  grantedBy: string;
-  createdAt: string;
-}
-
-export interface TuitionDiscountCreateRequest {
-  studentId?: number | null;
-  studentCode?: string | null;
-  semesterId: number;
-  discountPercent?: number;
-  fixedAmount?: number;
-  reason: string;
-}
 
 export interface TuitionInstallment {
   id: number;
@@ -498,14 +466,12 @@ export interface TuitionInvoice {
   semesterId: number;
   semesterCode?: string | null;
   totalTuition: number;
-  totalDiscount: number;
   amountDue: number;
   amountPaid: number;
   balance: number;
   status: InvoiceStatus;
   isStale: boolean;
   items?: TuitionInvoiceItem[];
-  discounts?: TuitionDiscount[];
   installments?: TuitionInstallment[];
   payments?: TuitionPayment[];
   createdAt: string;

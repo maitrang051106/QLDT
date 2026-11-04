@@ -249,14 +249,6 @@ paths:
           - type: string
           - type: 'null'
           title: Keyword
-      - name: unitKeyword
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Unitkeyword
       - name: page
         in: query
         required: false
@@ -590,6 +582,14 @@ paths:
           - type: string
           - type: 'null'
           title: Keyword
+      - name: unitKeyword
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Unitkeyword
       - name: page
         in: query
         required: false
@@ -997,7 +997,7 @@ paths:
     post:
       tags:
       - registration
-      summary: Đăng ký lớp học phần (UC005)
+      summary: Đăng ký lớp (UC005)
       operationId: register_api_registrations_post
       requestBody:
         content:
@@ -1128,507 +1128,6 @@ paths:
       responses:
         '204':
           description: Successful Response
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /api/registrations/{registration_id}/change:
-    put:
-      tags:
-      - registration
-      summary: Đổi lớp học phần (UC006 - Atomic Change)
-      operationId: change_section_api_registrations__registration_id__change_put
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: registration_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Registration Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeSectionRequest'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Registration'
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /api/students/me/timetable:
-    get:
-      tags:
-      - timetable
-      summary: Thời khóa biểu sinh viên (UC007)
-      operationId: student_timetable_api_students_me_timetable_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: semesterId
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Semesterid
-      - name: week
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
-          title: Week
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Timetable'
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /api/lecturers/me/timetable:
-    get:
-      tags:
-      - timetable
-      summary: Lịch dạy giảng viên (UC008)
-      operationId: lecturer_timetable_api_lecturers_me_timetable_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: semesterId
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Semesterid
-      - name: week
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: integer
-            minimum: 1
-          - type: 'null'
-          title: Week
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Timetable'
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /api/lecturers/me/sections:
-    get:
-      tags:
-      - timetable
-      summary: Các lớp được phân công
-      operationId: lecturer_sections_api_lecturers_me_sections_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: semesterId
-        in: query
-        required: false
-        schema:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Semesterid
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ItemList_Section_'
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /api/sections/{section_id}/exports/grades:
-    get:
-      tags:
-      - academic-records
-      summary: Export Grades
-      operationId: export_grades_api_sections__section_id__exports_grades_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: section_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Section Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
-              schema:
-                type: string
-                format: binary
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /api/sections/{section_id}/exports/attendance:
-    get:
-      tags:
-      - academic-records
-      summary: Export Attendance
-      operationId: export_attendance_api_sections__section_id__exports_attendance_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: section_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Section Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
-              schema:
-                type: string
-                format: binary
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /api/sections/{section_id}/grade-components:
-    get:
-      tags:
-      - academic-records
-      summary: Get Grade Components
-      operationId: get_grade_components_api_sections__section_id__grade_components_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: section_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Section Id
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ItemList_GradeComponent_'
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    put:
-      tags:
-      - academic-records
-      summary: Configure Grade Components
-      operationId: configure_grade_components_api_sections__section_id__grade_components_put
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: section_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          title: Section Id
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GradeComponentsRequest'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ItemList_GradeComponent_'
         '400':
           content:
             application/json:
@@ -1916,59 +1415,511 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/sections/{section_id}/grade-components:
+    get:
+      tags:
+      - academic-records
+      summary: Get Grade Components
+      operationId: get_grade_components_api_sections__section_id__grade_components_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: section_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Section Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemList_GradeComponent_'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - academic-records
+      summary: Configure Grade Components
+      operationId: configure_grade_components_api_sections__section_id__grade_components_put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: section_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Section Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GradeComponentsRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemList_GradeComponent_'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sections/{section_id}/exports/attendance:
+    get:
+      tags:
+      - academic-records
+      summary: Export Attendance
+      operationId: export_attendance_api_sections__section_id__exports_attendance_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: section_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Section Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/sections/{section_id}/exports/grades:
+    get:
+      tags:
+      - academic-records
+      summary: Export Grades
+      operationId: export_grades_api_sections__section_id__exports_grades_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: section_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Section Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/students/me/timetable:
+    get:
+      tags:
+      - timetable
+      summary: Thời khóa biểu sinh viên (UC007)
+      operationId: student_timetable_api_students_me_timetable_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: semesterId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Semesterid
+      - name: week
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Week
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timetable'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/lecturers/me/timetable:
+    get:
+      tags:
+      - timetable
+      summary: Lịch dạy giảng viên (UC008)
+      operationId: lecturer_timetable_api_lecturers_me_timetable_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: semesterId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Semesterid
+      - name: week
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Week
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timetable'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/lecturers/me/sections:
+    get:
+      tags:
+      - timetable
+      summary: Các lớp được phân công
+      operationId: lecturer_sections_api_lecturers_me_sections_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: semesterId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Semesterid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemList_Section_'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/timetable/check:
     post:
       tags:
       - timetable
       summary: Kiểm tra xung đột thời khóa biểu (không ghi DB)
       operationId: timetable_check_api_timetable_check_post
-      security:
-      - HTTPBearer: []
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              type: array
               items:
-                type: object
                 $ref: '#/components/schemas/ScheduleSlot'
+              type: array
+              title: Slots
+        required: true
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                type: array
                 items:
                   $ref: '#/components/schemas/ScheduleConflict'
-  /api/students/me/timetable/suggestions:
-    post:
-      tags:
-      - timetable
-      summary: Đề xuất lịch học cho sinh viên
-      operationId: student_timetable_suggestions_api_students_me_timetable_suggestions_post
-      security:
-      - HTTPBearer: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: true
-      responses:
-        '200':
-          description: Successful Response
+                type: array
+                title: Response Timetable Check Api Timetable Check Post
+        '400':
+          description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TimetableSuggestions'
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
   /api/tuition/me:
     get:
       tags:
       - tuition
-      summary: Xem hóa đơn học phí của sinh viên hiện tại
+      summary: Get My Tuition
       operationId: get_my_tuition_api_tuition_me_get
       security:
       - HTTPBearer: []
@@ -1977,184 +1928,116 @@ paths:
         in: query
         required: false
         schema:
-            type: integer
+          anyOf:
+          - type: integer
             minimum: 1
+          - type: 'null'
+          title: Semesterid
       responses:
         '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/TuitionInvoiceDto'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TuitionInvoiceDto'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
         '401':
-            description: Unauthorized
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
         '403':
-            description: Forbidden
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
         '404':
-            description: Not Found
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/tuition/me/payments:
     post:
       tags:
       - tuition
-      summary: Thanh toán học phí và phát hành biên lai
+      summary: Make Payment
       operationId: make_payment_api_tuition_me_payments_post
-      security:
-      - HTTPBearer: []
       requestBody:
-        required: true
         content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaymentCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreateRequest'
+        required: true
       responses:
         '201':
-            description: Payment and receipt created
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ReceiptDto'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptDto'
         '400':
-            description: Invalid payment
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
-            description: Unauthorized
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '409':
-            description: Payment conflict
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-  /api/receipts/me:
-    get:
-      tags:
-      - receipts
-      summary: Danh sách biên lai của sinh viên hiện tại
-      operationId: list_my_receipts_api_receipts_me_get
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
       security:
       - HTTPBearer: []
-      parameters:
-      - name: semesterId
-        in: query
-        required: false
-        schema:
-            type: integer
-            minimum: 1
-      responses:
-        '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ItemList_ReceiptDto_'
-        '401':
-            description: Unauthorized
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-  /api/receipts/{receipt_id}:
-    get:
-      tags:
-      - receipts
-      summary: Chi tiết biên lai
-      operationId: get_receipt_api_receipts__receipt_id__get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: receipt_id
-        in: path
-        required: true
-        schema:
-            type: integer
-      responses:
-        '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ReceiptDto'
-        '401':
-            description: Unauthorized
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-        '403':
-            description: Forbidden
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-        '404':
-            description: Not Found
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-  /api/receipts/{receipt_id}/pdf:
-    get:
-      tags:
-      - receipts
-      summary: Tải PDF biên lai
-      operationId: download_receipt_pdf_api_receipts__receipt_id__pdf_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: receipt_id
-        in: path
-        required: true
-        schema:
-            type: integer
-      responses:
-        '200':
-            description: PDF receipt
-            content:
-              application/pdf:
-                schema:
-                  type: string
-                  format: binary
-        '401':
-            description: Unauthorized
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-        '403':
-            description: Forbidden
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-        '404':
-            description: Not Found
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
   /api/admin/tuition-rates:
     get:
       tags:
       - tuition-admin
-      summary: Danh sách đơn giá học phí
+      summary: List Tuition Rates
       operationId: list_tuition_rates_api_admin_tuition_rates_get
       security:
       - HTTPBearer: []
@@ -2163,40 +2046,115 @@ paths:
         in: query
         required: false
         schema:
-            type: integer
+          anyOf:
+          - type: integer
             minimum: 1
+          - type: 'null'
+          title: Semesterid
       responses:
         '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ItemList_TuitionRateResponse_'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemList_TuitionRateResponse_'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     post:
       tags:
       - tuition-admin
-      summary: Tạo đơn giá học phí
+      summary: Create Tuition Rate
       operationId: create_tuition_rate_api_admin_tuition_rates_post
       security:
       - HTTPBearer: []
       requestBody:
         required: true
         content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TuitionRateCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TuitionRateCreateRequest'
       responses:
         '201':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/TuitionRateResponse'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TuitionRateResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/admin/tuition-rates/{rate_id}:
     put:
       tags:
       - tuition-admin
-      summary: Cập nhật đơn giá học phí
+      summary: Update Tuition Rate
       operationId: update_tuition_rate_api_admin_tuition_rates__rate_id__put
       security:
       - HTTPBearer: []
@@ -2205,24 +2163,61 @@ paths:
         in: path
         required: true
         schema:
-            type: integer
+          type: integer
+          title: Rate Id
       requestBody:
         required: true
         content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TuitionRateUpdateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TuitionRateUpdateRequest'
       responses:
         '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/TuitionRateResponse'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TuitionRateResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     delete:
       tags:
       - tuition-admin
-      summary: Xóa đơn giá chưa sử dụng
+      summary: Delete Tuition Rate
       operationId: delete_tuition_rate_api_admin_tuition_rates__rate_id__delete
       security:
       - HTTPBearer: []
@@ -2231,80 +2226,52 @@ paths:
         in: path
         required: true
         schema:
-            type: integer
+          type: integer
+          title: Rate Id
       responses:
         '204':
-            description: Rate deleted
-  /api/admin/tuition/discounts:
-    get:
-      tags:
-      - tuition-admin
-      summary: Danh sách miễn giảm học phí
-      operationId: list_tuition_discounts_api_admin_tuition_discounts_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: semesterId
-        in: query
-        required: false
-        schema:
-            type: integer
-            minimum: 1
-      - name: studentId
-        in: query
-        required: false
-        schema:
-            type: integer
-            minimum: 1
-      responses:
-        '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ItemList_TuitionDiscountResponse_'
-    post:
-      tags:
-      - tuition-admin
-      summary: Cấp miễn giảm học phí
-      operationId: create_tuition_discount_api_admin_tuition_discounts_post
-      security:
-      - HTTPBearer: []
-      requestBody:
-        required: true
-        content:
+          description: Successful Response
+        '400':
+          content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TuitionDiscountCreateRequest'
-      responses:
-        '201':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/TuitionDiscountResponse'
-  /api/admin/tuition/discounts/{discount_id}:
-    delete:
-      tags:
-      - tuition-admin
-      summary: Thu hồi miễn giảm
-      operationId: delete_tuition_discount_api_admin_tuition_discounts__discount_id__delete
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: discount_id
-        in: path
-        required: true
-        schema:
-            type: integer
-      responses:
-        '204':
-            description: Discount deleted
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/admin/tuition/installments:
     get:
       tags:
       - tuition-admin
-      summary: Danh sách các đợt nộp học phí
+      summary: List Tuition Installments
       operationId: list_tuition_installments_api_admin_tuition_installments_get
       security:
       - HTTPBearer: []
@@ -2313,61 +2280,170 @@ paths:
         in: query
         required: true
         schema:
-            type: integer
-            minimum: 1
+          type: integer
+          minimum: 1
+          title: Semesterid
       responses:
         '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ItemList_TuitionInstallmentResponse_'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemList_TuitionInstallmentResponse_'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
     put:
       tags:
       - tuition-admin
-      summary: Cấu hình các đợt nộp học phí
+      summary: Configure Tuition Installments
       operationId: configure_tuition_installments_api_admin_tuition_installments_put
       security:
       - HTTPBearer: []
       requestBody:
         required: true
         content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TuitionInstallmentsPutRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TuitionInstallmentsPutRequest'
       responses:
         '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ItemList_TuitionInstallmentResponse_'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemList_TuitionInstallmentResponse_'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/admin/tuition/invoices/generate:
     post:
       tags:
       - tuition-admin
-      summary: Tạo hoặc tính lại hóa đơn học phí
+      summary: Generate Tuition Invoices
       operationId: generate_tuition_invoices_api_admin_tuition_invoices_generate_post
-      security:
-      - HTTPBearer: []
       requestBody:
-        required: true
         content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvoiceGenerateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceGenerateRequest'
+        required: true
       responses:
         '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/InvoiceGenerateResult'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceGenerateResult'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
   /api/admin/tuition/invoices:
     get:
       tags:
       - tuition-admin
-      summary: Danh sách hóa đơn học phí
+      summary: List Tuition Invoices
       operationId: list_tuition_invoices_api_admin_tuition_invoices_get
       security:
       - HTTPBearer: []
@@ -2376,53 +2452,100 @@ paths:
         in: query
         required: true
         schema:
-            type: integer
-            minimum: 1
+          type: integer
+          minimum: 1
+          title: Semesterid
       - name: status
         in: query
         required: false
         schema:
-            $ref: '#/components/schemas/InvoiceStatus'
+          anyOf:
+          - $ref: '#/components/schemas/InvoiceStatus'
+          - type: 'null'
+          title: Status
       - name: studentCode
         in: query
         required: false
         schema:
-            type: string
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Studentcode
       - name: page
         in: query
         required: false
         schema:
-            type: integer
-            minimum: 1
-            default: 1
+          type: integer
+          minimum: 1
+          default: 1
+          title: Page
       - name: size
         in: query
         required: false
         schema:
-            type: integer
-            maximum: 100
-            minimum: 1
-            default: 20
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 20
+          title: Size
       - name: sort
         in: query
         required: false
         schema:
-            anyOf:
-            - type: string
-            - type: 'null'
-            default: null
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: tenTruong,asc|desc
+          title: Sort
+        description: tenTruong,asc|desc
       responses:
         '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/Page_TuitionInvoiceDto_'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page_TuitionInvoiceDto_'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/admin/tuition/reports/summary:
     get:
       tags:
       - tuition-admin
-      summary: Tổng hợp báo cáo học phí
+      summary: Tuition Summary
       operationId: tuition_summary_api_admin_tuition_reports_summary_get
       security:
       - HTTPBearer: []
@@ -2431,17 +2554,325 @@ paths:
         in: query
         required: true
         schema:
-            type: integer
-            minimum: 1
+          type: integer
+          minimum: 1
+          title: Semesterid
       responses:
         '200':
-            description: Successful Response
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/TuitionSummaryDto'
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TuitionSummaryDto'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/receipts/me:
+    get:
+      tags:
+      - receipts
+      summary: List My Receipts
+      operationId: list_my_receipts_api_receipts_me_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: semesterId
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+          title: Semesterid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemList_ReceiptDto_'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/receipts/{receipt_id}/pdf:
+    get:
+      tags:
+      - receipts
+      summary: Download Receipt Pdf
+      operationId: download_receipt_pdf_api_receipts__receipt_id__pdf_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: receipt_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Receipt Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/receipts/{receipt_id}:
+    get:
+      tags:
+      - receipts
+      summary: Get Receipt
+      operationId: get_receipt_api_receipts__receipt_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: receipt_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Receipt Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptDto'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Bad Request
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Unauthorized
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Forbidden
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Not Found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: Conflict
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
+    AttendanceEntry:
+      properties:
+        studentId:
+          type: integer
+          title: Studentid
+        studentCode:
+          type: string
+          title: Studentcode
+        fullName:
+          type: string
+          title: Fullname
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        status:
+          anyOf:
+          - $ref: '#/components/schemas/AttendanceStatus'
+          - type: 'null'
+      type: object
+      required:
+      - studentId
+      - studentCode
+      - fullName
+      - email
+      - status
+      title: AttendanceEntry
+    AttendanceSheet:
+      properties:
+        sectionId:
+          type: integer
+          title: Sectionid
+        sectionCode:
+          type: string
+          title: Sectioncode
+        classDate:
+          type: string
+          format: date
+          title: Classdate
+        scheduledDates:
+          items:
+            type: string
+            format: date
+          type: array
+          title: Scheduleddates
+        items:
+          items:
+            $ref: '#/components/schemas/AttendanceEntry'
+          type: array
+          title: Items
+      type: object
+      required:
+      - sectionId
+      - sectionCode
+      - classDate
+      - scheduledDates
+      - items
+      title: AttendanceSheet
+    AttendanceStatus:
+      type: string
+      enum:
+      - PRESENT
+      - ABSENT
+      - LATE
+      - EXCUSED
+      title: AttendanceStatus
+    AttendanceUpdateItem:
+      properties:
+        studentId:
+          type: integer
+          title: Studentid
+        status:
+          $ref: '#/components/schemas/AttendanceStatus'
+      type: object
+      required:
+      - studentId
+      - status
+      title: AttendanceUpdateItem
+    AttendanceUpdateRequest:
+      properties:
+        classDate:
+          type: string
+          format: date
+          title: Classdate
+        items:
+          items:
+            $ref: '#/components/schemas/AttendanceUpdateItem'
+          type: array
+          title: Items
+      type: object
+      required:
+      - classDate
+      - items
+      title: AttendanceUpdateRequest
     AuthResponse:
       properties:
         accessToken:
@@ -2462,6 +2893,19 @@ components:
       - expiresIn
       - user
       title: AuthResponse
+    ConflictRange:
+      properties:
+        start:
+          type: integer
+          title: Start
+        end:
+          type: integer
+          title: End
+      type: object
+      required:
+      - start
+      - end
+      title: ConflictRange
     CurrentSemester:
       properties:
         id:
@@ -2546,36 +2990,130 @@ components:
         message:
           type: string
           title: Message
-        type:
-          anyOf:
-          - type: string
-            enum:
-            - STUDENT
-            - ROOM
-            - LECTURER
-          - type: 'null'
-          title: Type
-        sectionA:
-          type: string
-          title: Sectiona
-        sectionB:
-          type: string
-          title: Sectionb
-        studentCode:
-          type: string
-          title: Studentcode
-        dayOfWeek:
-          type: integer
-          title: Dayofweek
-        periods:
-          $ref: '#/components/schemas/ConflictRange'
-        weeks:
-          $ref: '#/components/schemas/ConflictRange'
       type: object
       required:
       - field
       - message
       title: FieldError
+    GradeBook:
+      properties:
+        sectionId:
+          type: integer
+          title: Sectionid
+        sectionCode:
+          type: string
+          title: Sectioncode
+        components:
+          items:
+            $ref: '#/components/schemas/GradeComponent'
+          type: array
+          title: Components
+        items:
+          items:
+            $ref: '#/components/schemas/StudentGradeRow'
+          type: array
+          title: Items
+      type: object
+      required:
+      - sectionId
+      - sectionCode
+      - components
+      - items
+      title: GradeBook
+    GradeComponent:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        weightPercentage:
+          type: number
+          title: Weightpercentage
+        maxScore:
+          type: number
+          title: Maxscore
+        sortOrder:
+          type: integer
+          title: Sortorder
+      type: object
+      required:
+      - id
+      - name
+      - weightPercentage
+      - maxScore
+      - sortOrder
+      title: GradeComponent
+    GradeComponentInput:
+      properties:
+        name:
+          type: string
+          maxLength: 80
+          minLength: 1
+          title: Name
+        weightPercentage:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+          title: Weightpercentage
+        maxScore:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            exclusiveMinimum: 0.0
+          - type: string
+          title: Maxscore
+      type: object
+      required:
+      - name
+      - weightPercentage
+      - maxScore
+      title: GradeComponentInput
+    GradeComponentsRequest:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/GradeComponentInput'
+          type: array
+          maxItems: 10
+          minItems: 1
+          title: Items
+      type: object
+      required:
+      - items
+      title: GradeComponentsRequest
+    GradeUpdateItem:
+      properties:
+        studentId:
+          type: integer
+          title: Studentid
+        scores:
+          additionalProperties:
+            anyOf:
+            - type: number
+            - type: string
+            - type: 'null'
+          type: object
+          title: Scores
+      type: object
+      required:
+      - studentId
+      - scores
+      title: GradeUpdateItem
+    GradeUpdateRequest:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/GradeUpdateItem'
+          type: array
+          title: Items
+      type: object
+      required:
+      - items
+      title: GradeUpdateRequest
     HTTPValidationError:
       properties:
         detail:
@@ -2585,122 +3123,7 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
-    ScheduleConflict:
-      properties:
-        type:
-          type: string
-          enum:
-          - STUDENT
-          - LECTURER
-          - ROOM
-          title: Type
-        sectionA:
-          type: string
-          title: Sectiona
-        sectionB:
-          type: string
-          title: Sectionb
-        dayOfWeek:
-          type: integer
-          title: Dayofweek
-        periods:
-          $ref: '#/components/schemas/ConflictRange'
-          title: Periods
-        weeks:
-          $ref: '#/components/schemas/ConflictRange'
-          title: Weeks
-      type: object
-      required:
-      - type
-      - sectionA
-      - sectionB
-      - dayOfWeek
-      - periods
-      - weeks
-      title: ScheduleConflict
-    ScheduleSlot:
-      properties:
-        sectionCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Sectioncode
-        dayOfWeek:
-          type: integer
-          maximum: 8
-          minimum: 2
-          title: Dayofweek
-        startPeriod:
-          type: integer
-          maximum: 12
-          minimum: 1
-          title: Startperiod
-        endPeriod:
-          type: integer
-          maximum: 12
-          minimum: 1
-          title: Endperiod
-        startWeek:
-          type: integer
-          minimum: 1
-          title: Startweek
-          default: 1
-        endWeek:
-          type: integer
-          minimum: 1
-          title: Endweek
-          default: 1
-        roomId:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Roomid
-        lecturerId:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Lecturerid
-      type: object
-      required:
-      - dayOfWeek
-      - startPeriod
-      - endPeriod
-      title: ScheduleSlot
-    ConflictRange:
-      properties:
-        start:
-          type: integer
-          title: Start
-        end:
-          type: integer
-          title: End
-      type: object
-      required:
-      - start
-      - end
-      title: ConflictRange
-    TimetableSuggestions:
-      properties:
-        items:
-          type: array
-          title: Items
-          items:
-            type: object
-            additionalProperties: true
-      type: object
-      required:
-      - items
-      title: TimetableSuggestions
-    InvoiceStatus:
-      type: string
-      enum:
-      - UNPAID
-      - PARTIALLY_PAID
-      - PAID
-      - CANCELLED
-      title: InvoiceStatus
     InvoiceGenerateRequest:
-      type: object
       properties:
         semesterId:
           type: integer
@@ -2710,11 +3133,11 @@ components:
           - type: integer
           - type: 'null'
           title: Studentid
+      type: object
       required:
       - semesterId
       title: InvoiceGenerateRequest
     InvoiceGenerateResult:
-      type: object
       properties:
         totalGenerated:
           type: integer
@@ -2725,670 +3148,42 @@ components:
         message:
           type: string
           title: Message
+      type: object
       required:
       - totalGenerated
       - totalSkipped
       - message
       title: InvoiceGenerateResult
-    PaymentCreateRequest:
-      type: object
-      properties:
-        installmentId:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Installmentid
-        amount:
-          type: integer
-          exclusiveMinimum: 0
-          title: Amount
-        idempotencyKey:
-          type: string
-          minLength: 1
-          maxLength: 64
-          title: Idempotencykey
-      required:
-      - amount
-      - idempotencyKey
-      title: PaymentCreateRequest
-    TuitionRateCreateRequest:
-      type: object
-      properties:
-        semesterId:
-          type: integer
-          title: Semesterid
-        cohort:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Cohort
-        major:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Major
-        effectiveFrom:
-          anyOf:
-          - type: string
-            format: date
-          - type: 'null'
-          title: Effectivefrom
-        effectiveTo:
-          anyOf:
-          - type: string
-            format: date
-          - type: 'null'
-          title: Effectiveto
-        pricePerCredit:
-          type: integer
-          exclusiveMinimum: 0
-          title: Pricepercredit
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Description
-      required:
-      - semesterId
-      - pricePerCredit
-      title: TuitionRateCreateRequest
-    TuitionRateUpdateRequest:
-      type: object
-      properties:
-        cohort:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Cohort
-        major:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Major
-        effectiveFrom:
-          anyOf:
-          - type: string
-            format: date
-          - type: 'null'
-          title: Effectivefrom
-        effectiveTo:
-          anyOf:
-          - type: string
-            format: date
-          - type: 'null'
-          title: Effectiveto
-        pricePerCredit:
-          type: integer
-          exclusiveMinimum: 0
-          title: Pricepercredit
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Description
-      required:
-      - pricePerCredit
-      title: TuitionRateUpdateRequest
-    TuitionRateResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-          title: Id
-        semesterId:
-          type: integer
-          title: Semesterid
-        cohort:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Cohort
-        major:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Major
-        effectiveFrom:
-          type: string
-          format: date
-          title: Effectivefrom
-        effectiveTo:
-          anyOf:
-          - type: string
-            format: date
-          - type: 'null'
-          title: Effectiveto
-        pricePerCredit:
-          type: integer
-          title: Pricepercredit
-        description:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Description
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
-      required:
-      - id
-      - semesterId
-      - effectiveFrom
-      - pricePerCredit
-      - createdAt
-      title: TuitionRateResponse
-    TuitionDiscountCreateRequest:
-      type: object
-      properties:
-        studentId:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Studentid
-        studentCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Studentcode
-        semesterId:
-          type: integer
-          title: Semesterid
-        discountPercent:
-          type: number
-          minimum: 0
-          maximum: 100
-          default: 0
-          title: Discountpercent
-        fixedAmount:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Fixedamount
-        reason:
-          type: string
-          minLength: 1
-          title: Reason
-      required:
-      - semesterId
-      - reason
-      title: TuitionDiscountCreateRequest
-    TuitionDiscountResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-          title: Id
-        studentId:
-          type: integer
-          title: Studentid
-        studentCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Studentcode
-        studentName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Studentname
-        semesterId:
-          type: integer
-          title: Semesterid
-        discountPercent:
-          type: number
-          title: Discountpercent
-        fixedAmount:
-          type: integer
-          title: Fixedamount
-        reason:
-          type: string
-          title: Reason
-        grantedBy:
-          type: string
-          title: Grantedby
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
-      required:
-      - id
-      - studentId
-      - semesterId
-      - discountPercent
-      - fixedAmount
-      - reason
-      - grantedBy
-      - createdAt
-      title: TuitionDiscountResponse
-    TuitionInstallmentConfig:
-      type: object
-      properties:
-        installmentOrder:
-          type: integer
-          exclusiveMinimum: 0
-          title: Installmentorder
-        name:
-          type: string
-          minLength: 1
-          title: Name
-        dueDate:
-          type: string
-          format: date
-          title: Duedate
-        percentage:
-          anyOf:
-          - type: number
-            minimum: 0
-            maximum: 100
-          - type: 'null'
-          title: Percentage
-        fixedAmount:
-          anyOf:
-          - type: integer
-            minimum: 0
-          - type: 'null'
-          title: Fixedamount
-      required:
-      - installmentOrder
-      - name
-      - dueDate
-      title: TuitionInstallmentConfig
-    TuitionInstallmentsPutRequest:
-      type: object
-      properties:
-        semesterId:
-          type: integer
-          title: Semesterid
-        installments:
-          type: array
-          items:
-            $ref: '#/components/schemas/TuitionInstallmentConfig'
-          title: Installments
-      required:
-      - semesterId
-      - installments
-      title: TuitionInstallmentsPutRequest
-    TuitionInstallmentResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-          title: Id
-        semesterId:
-          type: integer
-          title: Semesterid
-        installmentOrder:
-          type: integer
-          title: Installmentorder
-        name:
-          type: string
-          title: Name
-        dueDate:
-          type: string
-          format: date
-          title: Duedate
-        percentage:
-          anyOf:
-          - type: number
-          - type: 'null'
-          title: Percentage
-        fixedAmount:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Fixedamount
-        allocatedAmount:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Allocatedamount
-        status:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Status
-      required:
-      - id
-      - semesterId
-      - installmentOrder
-      - name
-      - dueDate
-      title: TuitionInstallmentResponse
-    TuitionInvoiceItemDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          title: Id
-        subjectId:
-          type: integer
-          title: Subjectid
-        subjectCode:
-          type: string
-          title: Subjectcode
-        subjectName:
-          type: string
-          title: Subjectname
-        credits:
-          type: integer
-          title: Credits
-        tuitionCredits:
-          type: number
-          title: Tuitioncredits
-        pricePerCredit:
-          type: integer
-          title: Pricepercredit
-        amount:
-          type: integer
-          title: Amount
-      required:
-      - id
-      - subjectId
-      - subjectCode
-      - subjectName
-      - credits
-      - tuitionCredits
-      - pricePerCredit
-      - amount
-      title: TuitionInvoiceItemDto
-    TuitionPaymentDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          title: Id
-        amount:
-          type: integer
-          title: Amount
-        idempotencyKey:
-          type: string
-          title: Idempotencykey
-        paymentMethod:
-          type: string
-          title: Paymentmethod
-        paidAt:
-          type: string
-          format: date-time
-          title: Paidat
-        receiptNo:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Receiptno
-      required:
-      - id
-      - amount
-      - idempotencyKey
-      - paymentMethod
-      - paidAt
-      title: TuitionPaymentDto
-    TuitionInvoiceDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          title: Id
-        studentId:
-          type: integer
-          title: Studentid
-        studentCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Studentcode
-        studentName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Studentname
-        cohort:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Cohort
-        major:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Major
-        semesterId:
-          type: integer
-          title: Semesterid
-        semesterCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Semestercode
-        totalTuition:
-          type: integer
-          title: Totaltuition
-        totalDiscount:
-          type: integer
-          title: Totaldiscount
-        amountDue:
-          type: integer
-          title: Amountdue
-        amountPaid:
-          type: integer
-          title: Amountpaid
-        balance:
-          type: integer
-          title: Balance
-        status:
-          type: string
-          title: Status
-        isStale:
-          type: boolean
-          title: Isstale
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/TuitionInvoiceItemDto'
-          title: Items
-        discounts:
-          type: array
-          items:
-            $ref: '#/components/schemas/TuitionDiscountResponse'
-          title: Discounts
-        installments:
-          type: array
-          items:
-            $ref: '#/components/schemas/TuitionInstallmentResponse'
-          title: Installments
-        payments:
-          type: array
-          items:
-            $ref: '#/components/schemas/TuitionPaymentDto'
-          title: Payments
-        createdAt:
-          type: string
-          format: date-time
-          title: Createdat
-        updatedAt:
-          type: string
-          format: date-time
-          title: Updatedat
-      required:
-      - id
-      - studentId
-      - semesterId
-      - totalTuition
-      - totalDiscount
-      - amountDue
-      - amountPaid
-      - balance
-      - status
-      - isStale
-      - createdAt
-      - updatedAt
-      title: TuitionInvoiceDto
-    ReceiptDto:
-      type: object
-      properties:
-        id:
-          type: integer
-          title: Id
-        receiptNo:
-          type: string
-          title: Receiptno
-        paymentId:
-          type: integer
-          title: Paymentid
-        studentId:
-          type: integer
-          title: Studentid
-        studentCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Studentcode
-        studentName:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Studentname
-        invoiceId:
-          type: integer
-          title: Invoiceid
-        amount:
-          type: integer
-          title: Amount
-        amountInWords:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Amountinwords
-        issuedAt:
-          type: string
-          format: date-time
-          title: Issuedat
-        receiptData:
-          type: object
-          additionalProperties: true
-          title: Receiptdata
-      required:
-      - id
-      - receiptNo
-      - paymentId
-      - studentId
-      - invoiceId
-      - amount
-      - issuedAt
-      - receiptData
-      title: ReceiptDto
-    TuitionSummaryDto:
-      type: object
-      properties:
-        semesterId:
-          type: integer
-          title: Semesterid
-        semesterCode:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Semestercode
-        totalInvoices:
-          type: integer
-          title: Totalinvoices
-        totalAmountDue:
-          type: integer
-          title: Totalamountdue
-        totalAmountPaid:
-          type: integer
-          title: Totalamountpaid
-        totalBalance:
-          type: integer
-          title: Totalbalance
-        paidCount:
-          type: integer
-          title: Paidcount
-        partiallyPaidCount:
-          type: integer
-          title: Partiallypaidcount
-        unpaidCount:
-          type: integer
-          title: Unpaidcount
-      required:
-      - semesterId
-      - totalInvoices
-      - totalAmountDue
-      - totalAmountPaid
-      - totalBalance
-      - paidCount
-      - partiallyPaidCount
-      - unpaidCount
-      title: TuitionSummaryDto
-    ItemList_TuitionRateResponse_:
-      type: object
+    InvoiceStatus:
+      type: string
+      enum:
+      - UNPAID
+      - PARTIALLY_PAID
+      - PAID
+      - CANCELLED
+      title: InvoiceStatus
+    ItemList_GradeComponent_:
       properties:
         items:
-          type: array
           items:
-            $ref: '#/components/schemas/TuitionRateResponse'
+            $ref: '#/components/schemas/GradeComponent'
+          type: array
           title: Items
+      type: object
       required:
       - items
-      title: ItemList[TuitionRateResponse]
-    ItemList_TuitionDiscountResponse_:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/TuitionDiscountResponse'
-          title: Items
-      required:
-      - items
-      title: ItemList[TuitionDiscountResponse]
-    ItemList_TuitionInstallmentResponse_:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/TuitionInstallmentResponse'
-          title: Items
-      required:
-      - items
-      title: ItemList[TuitionInstallmentResponse]
+      title: ItemList[GradeComponent]
     ItemList_ReceiptDto_:
-      type: object
       properties:
         items:
-          type: array
           items:
             $ref: '#/components/schemas/ReceiptDto'
+          type: array
           title: Items
+      type: object
       required:
       - items
       title: ItemList[ReceiptDto]
-    Page_TuitionInvoiceDto_:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/TuitionInvoiceDto'
-          title: Items
-        page:
-          type: integer
-          title: Page
-        size:
-          type: integer
-          title: Size
-        totalItems:
-          type: integer
-          title: Totalitems
-        totalPages:
-          type: integer
-          title: Totalpages
-      required:
-      - items
-      - page
-      - size
-      - totalItems
-      - totalPages
-      title: Page[TuitionInvoiceDto]
     ItemList_Registration_:
       properties:
         items:
@@ -3422,6 +3217,28 @@ components:
       required:
       - items
       title: ItemList[Semester]
+    ItemList_TuitionInstallmentResponse_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/TuitionInstallmentResponse'
+          type: array
+          title: Items
+      type: object
+      required:
+      - items
+      title: ItemList[TuitionInstallmentResponse]
+    ItemList_TuitionRateResponse_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/TuitionRateResponse'
+          type: array
+          title: Items
+      type: object
+      required:
+      - items
+      title: ItemList[TuitionRateResponse]
     LecturerRef:
       properties:
         id:
@@ -3540,6 +3357,108 @@ components:
       - totalItems
       - totalPages
       title: Page[Subject]
+    Page_TuitionInvoiceDto_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/TuitionInvoiceDto'
+          type: array
+          title: Items
+        page:
+          type: integer
+          title: Page
+        size:
+          type: integer
+          title: Size
+        totalItems:
+          type: integer
+          title: Totalitems
+        totalPages:
+          type: integer
+          title: Totalpages
+      type: object
+      required:
+      - items
+      - page
+      - size
+      - totalItems
+      - totalPages
+      title: Page[TuitionInvoiceDto]
+    PaymentCreateRequest:
+      properties:
+        installmentId:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Installmentid
+        amount:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Amount
+        idempotencyKey:
+          type: string
+          maxLength: 64
+          minLength: 1
+          title: Idempotencykey
+      type: object
+      required:
+      - amount
+      - idempotencyKey
+      title: PaymentCreateRequest
+    ReceiptDto:
+      properties:
+        id:
+          type: integer
+          title: Id
+        receiptNo:
+          type: string
+          title: Receiptno
+        paymentId:
+          type: integer
+          title: Paymentid
+        studentId:
+          type: integer
+          title: Studentid
+        studentCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Studentcode
+        studentName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Studentname
+        invoiceId:
+          type: integer
+          title: Invoiceid
+        amount:
+          type: integer
+          title: Amount
+        amountInWords:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Amountinwords
+        issuedAt:
+          type: string
+          format: date-time
+          title: Issuedat
+        receiptData:
+          additionalProperties: true
+          type: object
+          title: Receiptdata
+      type: object
+      required:
+      - id
+      - receiptNo
+      - paymentId
+      - studentId
+      - invoiceId
+      - amount
+      - issuedAt
+      - receiptData
+      title: ReceiptDto
     RegisterRequest:
       properties:
         sectionId:
@@ -3596,6 +3515,85 @@ components:
       - building
       - capacity
       title: RoomRef
+    ScheduleConflict:
+      properties:
+        type:
+          type: string
+          enum:
+          - STUDENT
+          - LECTURER
+          - ROOM
+          title: Type
+        sectionA:
+          type: string
+          title: Sectiona
+        sectionB:
+          type: string
+          title: Sectionb
+        dayOfWeek:
+          type: integer
+          title: Dayofweek
+        periods:
+          $ref: '#/components/schemas/ConflictRange'
+        weeks:
+          $ref: '#/components/schemas/ConflictRange'
+      type: object
+      required:
+      - type
+      - sectionA
+      - sectionB
+      - dayOfWeek
+      - periods
+      - weeks
+      title: ScheduleConflict
+    ScheduleSlot:
+      properties:
+        sectionCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sectioncode
+        dayOfWeek:
+          type: integer
+          maximum: 8.0
+          minimum: 2.0
+          title: Dayofweek
+        startPeriod:
+          type: integer
+          maximum: 12.0
+          minimum: 1.0
+          title: Startperiod
+        endPeriod:
+          type: integer
+          maximum: 12.0
+          minimum: 1.0
+          title: Endperiod
+        startWeek:
+          type: integer
+          minimum: 1.0
+          title: Startweek
+          default: 1
+        endWeek:
+          type: integer
+          minimum: 1.0
+          title: Endweek
+          default: 1
+        roomId:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Roomid
+        lecturerId:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Lecturerid
+      type: object
+      required:
+      - dayOfWeek
+      - startPeriod
+      - endPeriod
+      title: ScheduleSlot
     Section:
       properties:
         id:
@@ -3843,7 +3841,8 @@ components:
       - endWeek
       - maxCapacity
       title: SectionUpdateRequest
-      description: Không có sectionCode. Nếu lớp đã có đăng ký, subjectId và semesterId phải giữ nguyên.
+      description: Không có sectionCode. Nếu lớp đã có đăng ký, subjectId và semesterId
+        phải giữ nguyên.
     Semester:
       properties:
         id:
@@ -3892,6 +3891,43 @@ components:
       - semesterCode
       - name
       title: SemesterRef
+    StudentGradeRow:
+      properties:
+        studentId:
+          type: integer
+          title: Studentid
+        studentCode:
+          type: string
+          title: Studentcode
+        fullName:
+          type: string
+          title: Fullname
+        email:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Email
+        scores:
+          additionalProperties:
+            anyOf:
+            - type: number
+            - type: 'null'
+          type: object
+          title: Scores
+        finalScore:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Finalscore
+      type: object
+      required:
+      - studentId
+      - studentCode
+      - fullName
+      - email
+      - scores
+      - finalScore
+      title: StudentGradeRow
     Subject:
       properties:
         id:
@@ -4076,6 +4112,428 @@ components:
       - startWeek
       - endWeek
       title: TimetableItem
+    TuitionInstallmentConfig:
+      properties:
+        installmentOrder:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Installmentorder
+        name:
+          type: string
+          minLength: 1
+          title: Name
+        dueDate:
+          type: string
+          format: date
+          title: Duedate
+        percentage:
+          anyOf:
+          - type: number
+            maximum: 100.0
+            minimum: 0.0
+          - type: string
+          - type: 'null'
+          title: Percentage
+        fixedAmount:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Fixedamount
+      type: object
+      required:
+      - installmentOrder
+      - name
+      - dueDate
+      title: TuitionInstallmentConfig
+    TuitionInstallmentResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        semesterId:
+          type: integer
+          title: Semesterid
+        installmentOrder:
+          type: integer
+          title: Installmentorder
+        name:
+          type: string
+          title: Name
+        dueDate:
+          type: string
+          format: date
+          title: Duedate
+        percentage:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Percentage
+        fixedAmount:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Fixedamount
+        allocatedAmount:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Allocatedamount
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      type: object
+      required:
+      - id
+      - semesterId
+      - installmentOrder
+      - name
+      - dueDate
+      title: TuitionInstallmentResponse
+    TuitionInstallmentsPutRequest:
+      properties:
+        semesterId:
+          type: integer
+          title: Semesterid
+        installments:
+          items:
+            $ref: '#/components/schemas/TuitionInstallmentConfig'
+          type: array
+          title: Installments
+      type: object
+      required:
+      - semesterId
+      - installments
+      title: TuitionInstallmentsPutRequest
+    TuitionInvoiceDto:
+      properties:
+        id:
+          type: integer
+          title: Id
+        studentId:
+          type: integer
+          title: Studentid
+        studentCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Studentcode
+        studentName:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Studentname
+        cohort:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cohort
+        major:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Major
+        semesterId:
+          type: integer
+          title: Semesterid
+        semesterCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Semestercode
+        totalTuition:
+          type: integer
+          title: Totaltuition
+        amountDue:
+          type: integer
+          title: Amountdue
+        amountPaid:
+          type: integer
+          title: Amountpaid
+        balance:
+          type: integer
+          title: Balance
+        status:
+          type: string
+          title: Status
+        isStale:
+          type: boolean
+          title: Isstale
+        items:
+          items:
+            $ref: '#/components/schemas/TuitionInvoiceItemDto'
+          type: array
+          title: Items
+        installments:
+          items:
+            $ref: '#/components/schemas/TuitionInstallmentResponse'
+          type: array
+          title: Installments
+        payments:
+          items:
+            $ref: '#/components/schemas/TuitionPaymentDto'
+          type: array
+          title: Payments
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+        updatedAt:
+          type: string
+          format: date-time
+          title: Updatedat
+      type: object
+      required:
+      - id
+      - studentId
+      - semesterId
+      - totalTuition
+      - amountDue
+      - amountPaid
+      - balance
+      - status
+      - isStale
+      - createdAt
+      - updatedAt
+      title: TuitionInvoiceDto
+    TuitionInvoiceItemDto:
+      properties:
+        id:
+          type: integer
+          title: Id
+        subjectId:
+          type: integer
+          title: Subjectid
+        subjectCode:
+          type: string
+          title: Subjectcode
+        subjectName:
+          type: string
+          title: Subjectname
+        credits:
+          type: integer
+          title: Credits
+        tuitionCredits:
+          type: number
+          title: Tuitioncredits
+        pricePerCredit:
+          type: integer
+          title: Pricepercredit
+        amount:
+          type: integer
+          title: Amount
+      type: object
+      required:
+      - id
+      - subjectId
+      - subjectCode
+      - subjectName
+      - credits
+      - tuitionCredits
+      - pricePerCredit
+      - amount
+      title: TuitionInvoiceItemDto
+    TuitionPaymentDto:
+      properties:
+        id:
+          type: integer
+          title: Id
+        amount:
+          type: integer
+          title: Amount
+        idempotencyKey:
+          type: string
+          title: Idempotencykey
+        paymentMethod:
+          type: string
+          title: Paymentmethod
+        paidAt:
+          type: string
+          format: date-time
+          title: Paidat
+        receiptNo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Receiptno
+      type: object
+      required:
+      - id
+      - amount
+      - idempotencyKey
+      - paymentMethod
+      - paidAt
+      title: TuitionPaymentDto
+    TuitionRateCreateRequest:
+      properties:
+        semesterId:
+          type: integer
+          title: Semesterid
+        cohort:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cohort
+        major:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Major
+        effectiveFrom:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Effectivefrom
+        effectiveTo:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Effectiveto
+        pricePerCredit:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Pricepercredit
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      type: object
+      required:
+      - semesterId
+      - pricePerCredit
+      title: TuitionRateCreateRequest
+    TuitionRateResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        semesterId:
+          type: integer
+          title: Semesterid
+        cohort:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cohort
+        major:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Major
+        effectiveFrom:
+          type: string
+          format: date
+          title: Effectivefrom
+        effectiveTo:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Effectiveto
+        pricePerCredit:
+          type: integer
+          title: Pricepercredit
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        createdAt:
+          type: string
+          format: date-time
+          title: Createdat
+      type: object
+      required:
+      - id
+      - semesterId
+      - effectiveFrom
+      - pricePerCredit
+      - createdAt
+      title: TuitionRateResponse
+    TuitionRateUpdateRequest:
+      properties:
+        cohort:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cohort
+        major:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Major
+        effectiveFrom:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Effectivefrom
+        effectiveTo:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Effectiveto
+        pricePerCredit:
+          type: integer
+          exclusiveMinimum: 0.0
+          title: Pricepercredit
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      type: object
+      required:
+      - pricePerCredit
+      title: TuitionRateUpdateRequest
+    TuitionSummaryDto:
+      properties:
+        semesterId:
+          type: integer
+          title: Semesterid
+        semesterCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Semestercode
+        totalInvoices:
+          type: integer
+          title: Totalinvoices
+        totalAmountDue:
+          type: integer
+          title: Totalamountdue
+        totalAmountPaid:
+          type: integer
+          title: Totalamountpaid
+        totalBalance:
+          type: integer
+          title: Totalbalance
+        paidCount:
+          type: integer
+          title: Paidcount
+        partiallyPaidCount:
+          type: integer
+          title: Partiallypaidcount
+        unpaidCount:
+          type: integer
+          title: Unpaidcount
+      type: object
+      required:
+      - semesterId
+      - totalInvoices
+      - totalAmountDue
+      - totalAmountPaid
+      - totalBalance
+      - paidCount
+      - partiallyPaidCount
+      - unpaidCount
+      title: TuitionSummaryDto
     UserInfo:
       properties:
         userId:
@@ -4140,268 +4598,6 @@ components:
       - msg
       - type
       title: ValidationError
-    AttendanceEntry:
-      properties:
-        studentId:
-          type: integer
-          title: Studentid
-        studentCode:
-          type: string
-          title: Studentcode
-        fullName:
-          type: string
-          title: Fullname
-        email:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Email
-        status:
-          anyOf:
-          - $ref: '#/components/schemas/AttendanceStatus'
-          - type: 'null'
-      type: object
-      required:
-      - studentId
-      - studentCode
-      - fullName
-      - email
-      - status
-      title: AttendanceEntry
-    AttendanceSheet:
-      properties:
-        sectionId:
-          type: integer
-          title: Sectionid
-        sectionCode:
-          type: string
-          title: Sectioncode
-        classDate:
-          type: string
-          format: date
-          title: Classdate
-        scheduledDates:
-          items:
-            type: string
-            format: date
-          type: array
-          title: Scheduleddates
-        items:
-          items:
-            $ref: '#/components/schemas/AttendanceEntry'
-          type: array
-          title: Items
-      type: object
-      required:
-      - sectionId
-      - sectionCode
-      - classDate
-      - scheduledDates
-      - items
-      title: AttendanceSheet
-    AttendanceStatus:
-      type: string
-      enum:
-      - PRESENT
-      - ABSENT
-      - LATE
-      - EXCUSED
-      title: AttendanceStatus
-    AttendanceUpdateItem:
-      properties:
-        studentId:
-          type: integer
-          title: Studentid
-        status:
-          $ref: '#/components/schemas/AttendanceStatus'
-      type: object
-      required:
-      - studentId
-      - status
-      title: AttendanceUpdateItem
-    AttendanceUpdateRequest:
-      properties:
-        classDate:
-          type: string
-          format: date
-          title: Classdate
-        items:
-          items:
-            $ref: '#/components/schemas/AttendanceUpdateItem'
-          type: array
-          title: Items
-      type: object
-      required:
-      - classDate
-      - items
-      title: AttendanceUpdateRequest
-    GradeBook:
-      properties:
-        sectionId:
-          type: integer
-          title: Sectionid
-        sectionCode:
-          type: string
-          title: Sectioncode
-        components:
-          items:
-            $ref: '#/components/schemas/GradeComponent'
-          type: array
-          title: Components
-        items:
-          items:
-            $ref: '#/components/schemas/StudentGradeRow'
-          type: array
-          title: Items
-      type: object
-      required:
-      - sectionId
-      - sectionCode
-      - components
-      - items
-      title: GradeBook
-    GradeComponent:
-      properties:
-        id:
-          type: integer
-          title: Id
-        name:
-          type: string
-          title: Name
-        weightPercentage:
-          type: number
-          title: Weightpercentage
-        maxScore:
-          type: number
-          title: Maxscore
-        sortOrder:
-          type: integer
-          title: Sortorder
-      type: object
-      required:
-      - id
-      - name
-      - weightPercentage
-      - maxScore
-      - sortOrder
-      title: GradeComponent
-    GradeComponentInput:
-      properties:
-        name:
-          type: string
-          maxLength: 80
-          minLength: 1
-          title: Name
-        weightPercentage:
-          anyOf:
-          - type: number
-            maximum: 100.0
-            exclusiveMinimum: 0.0
-          - type: string
-          title: Weightpercentage
-        maxScore:
-          anyOf:
-          - type: number
-            maximum: 100.0
-            exclusiveMinimum: 0.0
-          - type: string
-          title: Maxscore
-      type: object
-      required:
-      - name
-      - weightPercentage
-      - maxScore
-      title: GradeComponentInput
-    GradeComponentsRequest:
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/GradeComponentInput'
-          type: array
-          maxItems: 10
-          minItems: 1
-          title: Items
-      type: object
-      required:
-      - items
-      title: GradeComponentsRequest
-    GradeUpdateItem:
-      properties:
-        studentId:
-          type: integer
-          title: Studentid
-        scores:
-          additionalProperties:
-            anyOf:
-            - type: number
-            - type: string
-            - type: 'null'
-          type: object
-          title: Scores
-      type: object
-      required:
-      - studentId
-      - scores
-      title: GradeUpdateItem
-    GradeUpdateRequest:
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/GradeUpdateItem'
-          type: array
-          title: Items
-      type: object
-      required:
-      - items
-      title: GradeUpdateRequest
-    ItemList_GradeComponent_:
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/GradeComponent'
-          type: array
-          title: Items
-      type: object
-      required:
-      - items
-      title: ItemList[GradeComponent]
-    StudentGradeRow:
-      properties:
-        studentId:
-          type: integer
-          title: Studentid
-        studentCode:
-          type: string
-          title: Studentcode
-        fullName:
-          type: string
-          title: Fullname
-        email:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Email
-        scores:
-          additionalProperties:
-            anyOf:
-            - type: number
-            - type: 'null'
-          type: object
-          title: Scores
-        finalScore:
-          anyOf:
-          - type: number
-          - type: 'null'
-          title: Finalscore
-      type: object
-      required:
-      - studentId
-      - studentCode
-      - fullName
-      - email
-      - scores
-      - finalScore
-      title: StudentGradeRow
   securitySchemes:
     HTTPBearer:
       type: http

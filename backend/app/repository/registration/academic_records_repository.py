@@ -143,3 +143,29 @@ class AcademicRecordsRepository(BaseRepository):
         else:
             grade.score = score
             grade.updated_by_user_id = updated_by_user_id
+
+    def delete_student_records_in_section(self, section_id: int, student_id: int) -> None:
+        attendance_records = self.db.scalars(
+            select(AttendanceRecord).where(
+                AttendanceRecord.section_id == section_id,
+                AttendanceRecord.student_id == student_id,
+            )
+        ).all()
+        for record in attendance_records:
+            self.db.delete(record)
+
+        component_ids = list(
+            self.db.scalars(
+                select(GradeComponent.id).where(GradeComponent.section_id == section_id)
+            ).all()
+        )
+        if component_ids:
+            grades = self.db.scalars(
+                select(StudentGrade).where(
+                    StudentGrade.component_id.in_(component_ids),
+                    StudentGrade.student_id == student_id,
+                )
+            ).all()
+            for grade in grades:
+                self.db.delete(grade)
+        self.db.flush()
