@@ -11,6 +11,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      // Dữ liệu sau thao tác ghi luôn được invalidate/refetch; staleTime chỉ tránh gọi lại khi chuyển trang.
+      staleTime: 15_000,
     },
   },
 });

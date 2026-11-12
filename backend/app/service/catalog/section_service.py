@@ -53,6 +53,7 @@ class SectionService:
         subject_id: int | None,
         keyword: str | None,
         unit_keyword: str | None,
+        lecturer_keyword: str | None,
         paging: PageParams,
     ) -> Page[Section]:
         items, total = self.sections.search(
@@ -60,6 +61,7 @@ class SectionService:
             subject_id=subject_id,
             keyword=keyword,
             unit_keyword=unit_keyword,
+            lecturer_keyword=lecturer_keyword,
             offset=paging.offset,
             limit=paging.size,
             sort=paging.sort,

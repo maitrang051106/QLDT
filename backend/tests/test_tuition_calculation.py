@@ -1,10 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-import pytest
-
 from app.service.tuition.tuition_calculator import (
-    calculate_installments,
     calculate_subject_tuition,
     resolve_tuition_rate,
 )
@@ -25,43 +22,6 @@ def test_calculate_subject_tuition_decimal_and_rounding():
     assert calculate_subject_tuition(Decimal("1.5"), 450000) == 675000
     assert calculate_subject_tuition(Decimal("3.6"), 478125) == 1721250
     assert calculate_subject_tuition(Decimal("1.33"), 10000) == 13300
-
-
-def test_calculate_installments_rounding_remainder():
-    amount_due = 10000000
-    specs = [
-        {"installmentOrder": 1, "percentage": Decimal("50.00")},
-        {"installmentOrder": 2, "percentage": Decimal("30.00")},
-        {"installmentOrder": 3, "percentage": Decimal("20.00")},
-    ]
-    results = calculate_installments(amount_due, specs)
-    assert len(results) == 3
-    assert results[0]["allocatedAmount"] == 5000000
-    assert results[1]["allocatedAmount"] == 3000000
-    assert results[2]["allocatedAmount"] == 2000000
-    assert sum(r["allocatedAmount"] for r in results) == amount_due
-
-    amount_due_odd = 10000001
-    specs_odd = [
-        {"installmentOrder": 1, "percentage": Decimal("33.33")},
-        {"installmentOrder": 2, "percentage": Decimal("33.33")},
-        {"installmentOrder": 3, "percentage": Decimal("33.34")},
-    ]
-    results_odd = calculate_installments(amount_due_odd, specs_odd)
-    total_allocated = sum(r["allocatedAmount"] for r in results_odd)
-    assert total_allocated == amount_due_odd
-
-
-def test_installments_reject_mismatch_and_mixed_modes():
-    with pytest.raises(ValueError, match="100%"):
-        calculate_installments(1000, [{"percentage": Decimal("70")}])
-    with pytest.raises(ValueError, match="trộn"):
-        calculate_installments(
-            1000,
-            [{"percentage": Decimal("50")}, {"fixedAmount": 500}],
-        )
-    with pytest.raises(ValueError, match="không bằng"):
-        calculate_installments(1000, [{"fixedAmount": 400}, {"fixedAmount": 500}])
 
 
 class FakeRate:

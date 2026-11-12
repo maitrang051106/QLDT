@@ -20,66 +20,6 @@ def calculate_subject_tuition(
     return int(tc_dec * rate_dec)
 
 
-def calculate_installments(
-    amount_due: int,
-    installment_specs: list[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Phân bổ số tiền phải nộp vào các đợt nộp đã cấu hình.
-
-    Quy tắc:
-    - Tổng các đợt đúng bằng số phải nộp amount_due.
-    - Phần dư làm tròn được dồn vào đợt cuối cùng.
-    """
-    if not installment_specs:
-        return []
-
-    if amount_due <= 0:
-        return [{**spec, "allocatedAmount": 0} for spec in installment_specs]
-
-    modes = {
-        "percentage" if spec.get("percentage") is not None else "fixed"
-        for spec in installment_specs
-    }
-    if len(modes) != 1:
-        raise ValueError("Không được trộn tỷ lệ phần trăm và số tiền cố định")
-
-    n = len(installment_specs)
-    if modes == {"percentage"}:
-        total_percentage = sum(
-            (Decimal(str(spec["percentage"])) for spec in installment_specs),
-            Decimal("0"),
-        )
-        if total_percentage != Decimal("100"):
-            raise ValueError("Tổng tỷ lệ các đợt phải bằng 100%")
-    else:
-        total_fixed = sum(
-            int(spec.get("fixed_amount", spec.get("fixedAmount", 0)) or 0)
-            for spec in installment_specs
-        )
-        if total_fixed != amount_due:
-            raise ValueError("Tổng số tiền các đợt không bằng số phải nộp")
-
-    results: list[dict[str, Any]] = []
-    sum_allocated = 0
-
-    for i, spec in enumerate(installment_specs):
-        if i == n - 1:
-            amount = amount_due - sum_allocated
-        else:
-            pct = spec.get("percentage")
-            fixed = spec.get("fixed_amount") or spec.get("fixedAmount")
-            if pct is not None:
-                amount = int(Decimal(str(amount_due)) * Decimal(str(pct)) / Decimal("100"))
-            elif fixed is not None:
-                amount = int(fixed)
-            else:
-                amount = 0
-            sum_allocated += amount
-        results.append({**spec, "allocatedAmount": max(0, amount)})
-
-    return results
-
-
 def resolve_tuition_rate(
     rates: list[Any],
     cohort: str | None,

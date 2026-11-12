@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.entity.auth.student import Student
 from app.entity.base import Base, BigInt
-from app.entity.tuition.tuition_installment import TuitionInstallment
 
 if TYPE_CHECKING:
     from app.entity.tuition.receipt import Receipt
@@ -28,11 +27,6 @@ class TuitionPayment(Base):
     student_id: Mapped[int] = mapped_column(
         BigInt, ForeignKey("STUDENTS.student_id", ondelete="RESTRICT"), nullable=False
     )
-    installment_id: Mapped[int | None] = mapped_column(
-        BigInt,
-        ForeignKey("TUITION_INSTALLMENTS.installment_id", ondelete="RESTRICT"),
-        nullable=True,
-    )
     amount: Mapped[int] = mapped_column(BigInt, nullable=False)
     idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False)
     payment_method: Mapped[str] = mapped_column(String(50), default="SIMULATED", nullable=False)
@@ -40,5 +34,4 @@ class TuitionPayment(Base):
 
     invoice: Mapped["TuitionInvoice"] = relationship(back_populates="payments")
     student: Mapped[Student] = relationship()
-    installment: Mapped[TuitionInstallment | None] = relationship()
     receipt: Mapped["Receipt"] = relationship(back_populates="payment", uselist=False)

@@ -13,8 +13,6 @@ from app.dto.tuition.tuition import (
     InvoiceGenerateResult,
     PaymentCreateRequest,
     ReceiptDto,
-    TuitionInstallmentResponse,
-    TuitionInstallmentsPutRequest,
     TuitionInvoiceDto,
     TuitionRateCreateRequest,
     TuitionRateResponse,
@@ -106,22 +104,6 @@ def update_tuition_rate(
 def delete_tuition_rate(rate_id: int, _admin: AdminUser, db: DbSession):
     TuitionService(db).delete_rate(rate_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@admin_router.get("/tuition/installments", response_model=ItemList[TuitionInstallmentResponse])
-def list_tuition_installments(
-    _admin: AdminUser,
-    db: DbSession,
-    semester_id: Annotated[int, Query(alias="semesterId", ge=1)],
-):
-    return ItemList(items=TuitionService(db).list_installments(semester_id))
-
-
-@admin_router.put("/tuition/installments", response_model=ItemList[TuitionInstallmentResponse])
-def configure_tuition_installments(
-    request: TuitionInstallmentsPutRequest, _admin: AdminUser, db: DbSession
-):
-    return ItemList(items=TuitionService(db).configure_installments(request))
 
 
 @admin_router.post("/tuition/invoices/generate", response_model=InvoiceGenerateResult)

@@ -7,8 +7,6 @@ import type {
   Page,
   PaymentCreateRequest,
   Receipt,
-  TuitionInstallment,
-  TuitionInstallmentsPutRequest,
   TuitionInvoice,
   TuitionRate,
   TuitionRateCreateRequest,
@@ -73,23 +71,6 @@ export async function updateTuitionRate(
 
 export async function deleteTuitionRate(rateId: number): Promise<void> {
   await api.delete(`/admin/tuition-rates/${rateId}`);
-}
-
-export async function fetchTuitionInstallments(semesterId: number): Promise<TuitionInstallment[]> {
-  const response = await api.get<ItemList<TuitionInstallment>>("/admin/tuition/installments", {
-    params: { semesterId },
-  });
-  return requireItems<TuitionInstallment>(response.data);
-}
-
-export async function configureTuitionInstallments(
-  request: TuitionInstallmentsPutRequest,
-): Promise<TuitionInstallment[]> {
-  const response = await api.put<ItemList<TuitionInstallment>>(
-    "/admin/tuition/installments",
-    request,
-  );
-  return requireItems<TuitionInstallment>(response.data);
 }
 
 export async function generateTuitionInvoices(

@@ -19,7 +19,7 @@ Tài liệu này hợp nhất ma trận truy vết (`Traceability Matrix`), bả
 | **UC009** Xem danh sách SV lớp (Giảng viên) | `GET /lecturers/me/sections`, `GET /sections/{id}/students` | `/app/sections/:sectionId/students` | **Hoàn thành** — Kiểm tra đúng giảng viên phụ trách lớp trước khi trả danh sách sinh viên. |
 | **UC010** Điểm danh, Bảng điểm & Xuất Excel | `/sections/{id}/attendance`, `/sections/{id}/grades`, `/sections/{id}/grade-components`, `/sections/{id}/exports/*` | `/app/sections/:sectionId/students` (Giảng viên); `/app/sections` (Admin cấu hình cột điểm) | **Hoàn thành** — Kiểm thử đầy đủ điểm danh đúng ngày học, khóa cấu hình cột điểm, tính điểm tổng kết làm tròn `0.5` và xuất file `.xlsx` (`test_academic_records.py`). |
 | **Xung đột lịch học** | `POST /timetable/check` | `/app/admin/timetable`, `/app/sections` | **Hoàn thành** — Phát hiện xung đột `STUDENT`, `ROOM`, `LECTURER` theo thứ/tiết/tuần (`test_timetable_conflicts.py`). |
-| **Học phí & Biên lai điện tử** | `/tuition/me`, `/tuition/me/payments`, `/receipts/*`, `/admin/tuition-rates`, `/admin/tuition/*` | `/app/tuition` (Sinh viên), `/app/tuition/manage` (Admin) | **Hoàn thành** — Tính học phí theo TCHP, cấu hình đợt nộp, thanh toán idempotent, xuất PDF biên lai và báo cáo tổng hợp (`test_tuition_api.py`, `test_tuition_calculation.py`). |
+| **Học phí & Biên lai điện tử** | `/tuition/me`, `/tuition/me/payments`, `/receipts/*`, `/admin/tuition-rates`, `/admin/tuition/*` | `/app/tuition` (Sinh viên), `/app/tuition/manage` (Admin) | **Hoàn thành** — Tính học phí theo TCHP, thanh toán một lần idempotent, danh sách hóa đơn đã nộp, xuất PDF biên lai và báo cáo tổng hợp (`test_tuition_api.py`, `test_tuition_calculation.py`). |
 
 ---
 
@@ -32,7 +32,7 @@ Tài liệu này hợp nhất ma trận truy vết (`Traceability Matrix`), bả
   - Tranh chấp đăng ký đồng thời (`concurrency race`) khi nhiều sinh viên cùng抢 1 chỗ trống cuối cùng.
   - Quy tắc tín chỉ `12–24 TC`, trùng lịch học và dọn dẹp hồ sơ học tập khi hủy đăng ký.
   - Điểm danh, cấu hình cột điểm, tính điểm tổng kết và xuất Excel.
-  - Tính học phí theo TCHP, phân bổ đợt nộp, thanh toán idempotent và kết xuất file PDF biên lai.
+  - Tính học phí theo TCHP, thanh toán một lần idempotent và kết xuất file PDF biên lai.
 
 ### Kiểm thử tích hợp MySQL & Gateway (`pytest -m integration` & `gateway/smoke_test.py`)
 - Kiểm tra lược đồ Alembic khớp 100% với ORM Entity (`alembic upgrade head && alembic check`).

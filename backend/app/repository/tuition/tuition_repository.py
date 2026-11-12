@@ -10,7 +10,6 @@ from app.entity.catalog.subject import Subject
 from app.entity.registration.registration import Registration
 from app.entity.tuition.receipt import Receipt
 from app.entity.tuition.receipt_sequence import ReceiptSequence
-from app.entity.tuition.tuition_installment import TuitionInstallment
 from app.entity.tuition.tuition_invoice import InvoiceStatus, TuitionInvoice
 from app.entity.tuition.tuition_invoice_item import TuitionInvoiceItem
 from app.entity.tuition.tuition_payment import TuitionPayment
@@ -52,44 +51,6 @@ class TuitionRepository(BaseRepository):
     def delete_rate(self, rate: TuitionRate) -> None:
         self.db.delete(rate)
         self.db.flush()
-
-    # ==================== TUITION INSTALLMENTS ====================
-    def list_installments(self, semester_id: int) -> list[TuitionInstallment]:
-        stmt = (
-            select(TuitionInstallment)
-            .options(joinedload(TuitionInstallment.semester))
-            .where(TuitionInstallment.semester_id == semester_id)
-            .order_by(TuitionInstallment.installment_order.asc())
-        )
-        return list(self.db.scalars(stmt).all())
-
-    def get_installment_by_id(self, installment_id: int) -> TuitionInstallment | None:
-        stmt = (
-            select(TuitionInstallment)
-            .options(joinedload(TuitionInstallment.semester))
-            .where(TuitionInstallment.id == installment_id)
-        )
-        return self.db.scalars(stmt).first()
-
-    def replace_installments(
-        self, semester_id: int, installments: list[TuitionInstallment]
-    ) -> list[TuitionInstallment]:
-        self.db.execute(
-            delete(TuitionInstallment).where(TuitionInstallment.semester_id == semester_id)
-        )
-        for inst in installments:
-            self.db.add(inst)
-        self.db.flush()
-        return installments
-
-    def has_payments_for_semester(self, semester_id: int) -> bool:
-        stmt = (
-            select(TuitionPayment.id)
-            .join(TuitionInvoice, TuitionPayment.invoice_id == TuitionInvoice.id)
-            .where(TuitionInvoice.semester_id == semester_id)
-            .limit(1)
-        )
-        return self.db.scalar(stmt) is not None
 
     def mark_invoices_stale(self, semester_id: int, student_id: int | None = None) -> None:
         stmt = select(TuitionInvoice).where(TuitionInvoice.semester_id == semester_id)
@@ -263,17 +224,6 @@ class TuitionRepository(BaseRepository):
             )
         )
         return self.db.scalars(stmt).first()
-
-    def paid_amount_for_installment(self, invoice_id: int, installment_id: int) -> int:
-        return int(
-            self.db.scalar(
-                select(func.coalesce(func.sum(TuitionPayment.amount), 0)).where(
-                    TuitionPayment.invoice_id == invoice_id,
-                    TuitionPayment.installment_id == installment_id,
-                )
-            )
-            or 0
-        )
 
     def add_payment(self, payment: TuitionPayment) -> TuitionPayment:
         self.db.add(payment)

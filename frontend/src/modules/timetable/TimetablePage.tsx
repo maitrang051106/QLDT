@@ -183,8 +183,8 @@ export default function TimetablePage({ role }: { role: UserRole }) {
                 {(entry.roomCode ?? entry.room?.roomCode) && (
                   <span>{entry.roomCode ?? entry.room?.roomCode}</span>
                 )}
-                {isLecturer && (entry.lecturerName ?? entry.lecturer?.fullName) && (
-                  <span>{entry.lecturerName ?? entry.lecturer?.fullName}</span>
+                {!isLecturer && (entry.lecturerName ?? entry.lecturer?.fullName) && (
+                  <span>GV: {entry.lecturerName ?? entry.lecturer?.fullName}</span>
                 )}
               </article>
             ))}

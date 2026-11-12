@@ -1,6 +1,6 @@
 -- =====================================================================
 -- QLDT - Hệ thống Quản lý & Đăng ký Học phần Trực tuyến
--- Lược đồ quan hệ (18 bảng)
+-- Lược đồ quan hệ (17 bảng)
 -- Sinh theo: Tài liệu thiết kế phần mềm v1.0 - mục 3.2 và 3.3
 --           Quy ước API và JSON (FE-BE) v1.0 - mục 3.2 (đối chiếu tên cột)
 -- Mã nguồn chuẩn máy đọc được: openapi.yaml
@@ -25,7 +25,6 @@ DROP TABLE IF EXISTS RECEIPTS;
 DROP TABLE IF EXISTS TUITION_PAYMENTS;
 DROP TABLE IF EXISTS TUITION_INVOICE_ITEMS;
 DROP TABLE IF EXISTS TUITION_INVOICES;
-DROP TABLE IF EXISTS TUITION_INSTALLMENTS;
 DROP TABLE IF EXISTS TUITION_RATES;
 DROP TABLE IF EXISTS RECEIPT_SEQUENCES;
 DROP TABLE IF EXISTS STUDENT_GRADES;
@@ -312,35 +311,6 @@ CREATE TABLE TUITION_RATES (
   COMMENT 'Đơn giá học phí theo tín chỉ học phí';
 
 -- ---------------------------------------------------------------------
--- TUITION_INSTALLMENTS: cấu hình các đợt nộp học phí trong học kỳ
--- ---------------------------------------------------------------------
-CREATE TABLE TUITION_INSTALLMENTS (
-    installment_id    BIGINT        NOT NULL AUTO_INCREMENT COMMENT 'Mã đợt nộp',
-    semester_id       BIGINT        NOT NULL                COMMENT 'Học kỳ áp dụng',
-    installment_order INT           NOT NULL                COMMENT 'Thứ tự đợt (1, 2, ...)',
-    name              VARCHAR(100)  NOT NULL                COMMENT 'Tên đợt nộp',
-    due_date          DATE          NOT NULL                COMMENT 'Hạn nộp',
-    percentage        DECIMAL(5, 2)     NULL                COMMENT 'Tỷ lệ % nộp',
-    fixed_amount      BIGINT            NULL                COMMENT 'Số tiền nộp cố định (VND)',
-    PRIMARY KEY (installment_id),
-    UNIQUE KEY uk_installments_semester_order (semester_id, installment_order),
-    CONSTRAINT fk_tuition_installments_semester FOREIGN KEY (semester_id) REFERENCES SEMESTERS (semester_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT ck_tuition_installments_order CHECK (installment_order > 0),
-    CONSTRAINT ck_tuition_installments_amount_basis CHECK (
-        (percentage IS NOT NULL AND fixed_amount IS NULL) OR
-        (percentage IS NULL AND fixed_amount IS NOT NULL)
-    ),
-    CONSTRAINT ck_tuition_installments_percentage CHECK (
-        percentage IS NULL OR (percentage >= 0 AND percentage <= 100)
-    ),
-    CONSTRAINT ck_tuition_installments_fixed CHECK (fixed_amount IS NULL OR fixed_amount >= 0)
-) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci
-  COMMENT 'Cấu hình đợt nộp học phí';
-
--- ---------------------------------------------------------------------
 -- TUITION_INVOICES: hóa đơn học phí của sinh viên theo học kỳ (1 dòng/sv/kỳ)
 -- ---------------------------------------------------------------------
 CREATE TABLE TUITION_INVOICES (
@@ -403,7 +373,6 @@ CREATE TABLE TUITION_PAYMENTS (
     payment_id      BIGINT      NOT NULL AUTO_INCREMENT COMMENT 'Mã giao dịch nộp tiền',
     invoice_id      BIGINT      NOT NULL                COMMENT 'Hóa đơn',
     student_id      BIGINT      NOT NULL                COMMENT 'Sinh viên nộp',
-    installment_id  BIGINT          NULL                COMMENT 'Đợt nộp tương ứng (nếu có)',
     amount          BIGINT      NOT NULL                COMMENT 'Số tiền nộp lần này (VND)',
     idempotency_key VARCHAR(64) NOT NULL                COMMENT 'Khóa chống trùng lặp từ client',
     payment_method  VARCHAR(50) NOT NULL DEFAULT 'SIMULATED' COMMENT 'Phương thức thanh toán',
@@ -414,8 +383,6 @@ CREATE TABLE TUITION_PAYMENTS (
     CONSTRAINT fk_payments_invoice FOREIGN KEY (invoice_id) REFERENCES TUITION_INVOICES (invoice_id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_payments_student FOREIGN KEY (student_id) REFERENCES STUDENTS (student_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_payments_installment FOREIGN KEY (installment_id) REFERENCES TUITION_INSTALLMENTS (installment_id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT ck_payments_amount CHECK (amount > 0)
 ) ENGINE = InnoDB

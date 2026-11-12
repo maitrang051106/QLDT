@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CalendarOutlined, DownloadOutlined, DollarOutlined, FileTextOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -7,10 +7,7 @@ import {
   Button,
   Card,
   Empty,
-  Form,
-  InputNumber,
   Modal,
-  Select,
   Space,
   Spin,
   Statistic,
@@ -23,7 +20,6 @@ import type { ColumnsType } from "antd/es/table";
 import type {
   InvoiceStatus,
   Receipt,
-  TuitionInstallment,
   TuitionInvoiceItem,
 } from "../../shared/api/api-types";
 import { readApiError } from "../../shared/api/client";
@@ -57,6 +53,7 @@ export default function StudentTuitionPage() {
   const queryClient = useQueryClient();
   const [payModalOpen, setPayModalOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt>();
+  const paymentKeyRef = useRef<string>("");
 
   const semesterQuery = useQuery({
     queryKey: ["semesters", "current"],
@@ -77,15 +74,7 @@ export default function StudentTuitionPage() {
   });
 
   const paymentMutation = useMutation({
-    mutationFn: (values: { amount: number; installmentId?: number | null }) =>
-      submitTuitionPayment({
-        amount: values.amount,
-        installmentId: values.installmentId ?? null,
-        idempotencyKey:
-          typeof crypto !== "undefined" && "randomUUID" in crypto
-            ? crypto.randomUUID()
-            : `pay-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-      }),
+    mutationFn: () => submitTuitionPayment({ idempotencyKey: paymentKeyRef.current }),
     onSuccess: async (receipt) => {
       setPayModalOpen(false);
       await Promise.all([
@@ -167,38 +156,6 @@ export default function StudentTuitionPage() {
     },
   ];
 
-  const installmentColumns: ColumnsType<TuitionInstallment> = [
-    { title: "Đợt", dataIndex: "installmentOrder", key: "installmentOrder", width: 70, align: "center" },
-    { title: "Tên đợt nộp", dataIndex: "name", key: "name" },
-    { title: "Hạn nộp", dataIndex: "dueDate", key: "dueDate", width: 130 },
-    {
-      title: "Mức phân bổ",
-      key: "basis",
-      width: 140,
-      render: (_, row) =>
-        row.percentage != null ? `${row.percentage}%` : formatVnd(row.fixedAmount ?? 0),
-    },
-    {
-      title: "Số tiền đợt này",
-      dataIndex: "allocatedAmount",
-      key: "allocatedAmount",
-      width: 160,
-      align: "right",
-      render: (value: number | null | undefined) => formatVnd(value ?? 0),
-    },
-    {
-      title: "Trạng thái",
-      dataIndex: "status",
-      key: "status",
-      width: 130,
-      render: (status: TuitionInstallment["status"]) => {
-        if (status === "PAID") return <Tag color="success">Đã nộp đủ</Tag>;
-        if (status === "OVERDUE") return <Tag color="error">Quá hạn</Tag>;
-        return <Tag color="processing">Đang chờ nộp</Tag>;
-      },
-    },
-  ];
-
   const receiptColumns: ColumnsType<Receipt> = [
     {
       title: "Số biên lai",
@@ -259,7 +216,13 @@ export default function StudentTuitionPage() {
             type="primary"
             icon={<DollarOutlined />}
             disabled={!invoice || invoice.balance <= 0}
-            onClick={() => setPayModalOpen(true)}
+            onClick={() => {
+              paymentKeyRef.current =
+                typeof crypto !== "undefined" && "randomUUID" in crypto
+                  ? crypto.randomUUID()
+                  : `pay-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+              setPayModalOpen(true);
+            }}
           >
             Nộp học phí
           </Button>
@@ -324,25 +287,8 @@ export default function StudentTuitionPage() {
             ),
           },
           {
-            key: "installments",
-            label: `Đợt nộp (${invoice?.installments?.length ?? 0})`,
-            children: (
-              <Card styles={{ body: { padding: 0 } }}>
-                <Table<TuitionInstallment>
-                  rowKey="id"
-                  size="small"
-                  columns={installmentColumns}
-                  dataSource={invoice?.installments ?? []}
-                  pagination={false}
-                  scroll={{ x: 680 }}
-                  locale={{ emptyText: <Empty description="Chưa cấu hình đợt nộp." /> }}
-                />
-              </Card>
-            ),
-          },
-          {
             key: "receipts",
-            label: `Biên lai điện tử (${receipts.length})`,
+            label: `Hóa đơn đã nộp (${receipts.length})`,
             children: (
               <Card styles={{ body: { padding: 0 } }}>
                 <Table<Receipt>
@@ -352,7 +298,7 @@ export default function StudentTuitionPage() {
                   dataSource={receipts}
                   pagination={{ pageSize: 10 }}
                   scroll={{ x: 760 }}
-                  locale={{ emptyText: <Empty description="Chưa có biên lai thanh toán." /> }}
+                  locale={{ emptyText: <Empty description="Chưa có hóa đơn nào đã nộp." /> }}
                 />
               </Card>
             ),
@@ -367,46 +313,25 @@ export default function StudentTuitionPage() {
         footer={null}
         destroyOnHidden
       >
-        <Form<{ amount: number; installmentId?: number | null }>
-          layout="vertical"
-          initialValues={{
-            amount: invoice?.balance ?? 0,
-            installmentId: invoice?.installments?.[0]?.id ?? null,
-          }}
-          onFinish={(values) => paymentMutation.mutate(values)}
+        <Statistic
+          title="Số tiền thanh toán (một lần)"
+          value={formatVnd(invoice?.balance ?? 0)}
+          style={{ marginBottom: 16 }}
+        />
+        <Alert
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+          message="Học phí được thanh toán một lần, đúng toàn bộ số tiền còn phải nộp."
+        />
+        <Button
+          type="primary"
+          block
+          loading={paymentMutation.isPending}
+          onClick={() => paymentMutation.mutate()}
         >
-          <Form.Item label="Chọn đợt nộp (tùy chọn)" name="installmentId">
-            <Select
-              allowClear
-              placeholder="Nộp chung vào số dư hóa đơn"
-              options={(invoice?.installments ?? []).map((inst) => ({
-                value: inst.id,
-                label: `${inst.name} · ${formatVnd(inst.allocatedAmount ?? 0)}`,
-              }))}
-            />
-          </Form.Item>
-          <Form.Item
-            label="Số tiền nộp (VND)"
-            name="amount"
-            rules={[{ required: true, message: "Nhập số tiền cần nộp" }]}
-          >
-            <InputNumber
-              min={1}
-              max={invoice?.balance ?? undefined}
-              step={50000}
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
-          <Alert
-            type="info"
-            showIcon
-            style={{ marginBottom: 16 }}
-            message={`Số tiền còn phải nộp tối đa: ${formatVnd(invoice?.balance ?? 0)}`}
-          />
-          <Button type="primary" htmlType="submit" block loading={paymentMutation.isPending}>
-            Xác nhận thanh toán &amp; xuất biên lai
-          </Button>
-        </Form>
+          Xác nhận thanh toán &amp; xuất biên lai
+        </Button>
       </Modal>
 
       <Modal

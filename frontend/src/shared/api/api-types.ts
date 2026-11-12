@@ -403,39 +403,6 @@ export interface TuitionRateCreateRequest {
 
 export type TuitionRateUpdateRequest = Omit<TuitionRateCreateRequest, "semesterId">;
 
-export interface TuitionInstallment {
-  id: number;
-  semesterId: number;
-  installmentOrder: number;
-  name: string;
-  dueDate: string;
-  percentage: number | null;
-  fixedAmount: number | null;
-  allocatedAmount?: number | null;
-  status?: "PENDING" | "PAID" | "OVERDUE" | null;
-}
-
-export type TuitionInstallmentConfig =
-  | {
-      installmentOrder: number;
-      name: string;
-      dueDate: string;
-      percentage: number;
-      fixedAmount?: null;
-    }
-  | {
-      installmentOrder: number;
-      name: string;
-      dueDate: string;
-      percentage?: null;
-      fixedAmount: number;
-    };
-
-export interface TuitionInstallmentsPutRequest {
-  semesterId: number;
-  installments: TuitionInstallmentConfig[];
-}
-
 export interface TuitionInvoiceItem {
   id: number;
   subjectId: number;
@@ -472,15 +439,12 @@ export interface TuitionInvoice {
   status: InvoiceStatus;
   isStale: boolean;
   items?: TuitionInvoiceItem[];
-  installments?: TuitionInstallment[];
   payments?: TuitionPayment[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface PaymentCreateRequest {
-  installmentId?: number | null;
-  amount: number;
   idempotencyKey: string;
 }
 

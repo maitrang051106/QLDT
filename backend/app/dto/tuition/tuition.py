@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal
 from typing import Any
 
-from pydantic import Field, model_validator
+from pydantic import Field
 
 from app.dto.common import CamelModel, VNDateTime
 
@@ -38,37 +37,6 @@ class TuitionRateUpdateRequest(CamelModel):
     effective_to: date | None = None
     price_per_credit: int = Field(..., gt=0)
     description: str | None = None
-
-
-class TuitionInstallmentResponse(CamelModel):
-    id: int
-    semester_id: int
-    installment_order: int
-    name: str
-    due_date: date
-    percentage: float | None = None
-    fixed_amount: int | None = None
-    allocated_amount: int | None = None
-    status: str | None = None  # PENDING | PAID | OVERDUE
-
-
-class TuitionInstallmentConfig(CamelModel):
-    installment_order: int = Field(..., gt=0)
-    name: str = Field(..., min_length=1)
-    due_date: date
-    percentage: Decimal | None = Field(default=None, ge=0, le=100)
-    fixed_amount: int | None = Field(default=None, ge=0)
-
-    @model_validator(mode="after")
-    def require_one_amount_basis(self) -> TuitionInstallmentConfig:
-        if (self.percentage is None) == (self.fixed_amount is None):
-            raise ValueError("Mỗi đợt phải cấu hình đúng một trong tỷ lệ hoặc số tiền")
-        return self
-
-
-class TuitionInstallmentsPutRequest(CamelModel):
-    semester_id: int
-    installments: list[TuitionInstallmentConfig]
 
 
 class TuitionInvoiceItemDto(CamelModel):
@@ -107,15 +75,12 @@ class TuitionInvoiceDto(CamelModel):
     status: str
     is_stale: bool
     items: list[TuitionInvoiceItemDto] = Field(default_factory=list)
-    installments: list[TuitionInstallmentResponse] = Field(default_factory=list)
     payments: list[TuitionPaymentDto] = Field(default_factory=list)
     created_at: VNDateTime
     updated_at: VNDateTime
 
 
 class PaymentCreateRequest(CamelModel):
-    installment_id: int | None = None
-    amount: int = Field(..., gt=0)
     idempotency_key: str = Field(..., min_length=1, max_length=64)
 
 

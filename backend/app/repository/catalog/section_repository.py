@@ -3,6 +3,7 @@ from sqlalchemy.engine import CursorResult
 from sqlalchemy.orm import joinedload
 
 from app.entity.auth.lecturer import Lecturer
+from app.entity.auth.user import User
 from app.entity.catalog.course_section import CourseSection
 from app.entity.catalog.subject import Subject
 from app.entity.registration.registration import Registration
@@ -29,6 +30,7 @@ class SectionRepository(BaseRepository):
         subject_id: int | None,
         keyword: str | None,
         unit_keyword: str | None,
+        lecturer_keyword: str | None,
         offset: int,
         limit: int,
         sort: str | None,
@@ -70,6 +72,21 @@ class SectionRepository(BaseRepository):
             unit_condition = Subject.description.ilike(unit_kw)
             stmt = stmt.where(unit_condition)
             count_stmt = count_stmt.where(unit_condition)
+
+        if lecturer_keyword:
+            lecturer_kw = f"%{lecturer_keyword.strip()}%"
+            lecturer_ids = (
+                select(Lecturer.id)
+                .join(User, Lecturer.user_id == User.id)
+                .where(
+                    or_(
+                        User.full_name.ilike(lecturer_kw), Lecturer.lecturer_code.ilike(lecturer_kw)
+                    )
+                )
+            )
+            lecturer_condition = CourseSection.lecturer_id.in_(lecturer_ids)
+            stmt = stmt.where(lecturer_condition)
+            count_stmt = count_stmt.where(lecturer_condition)
 
         total = self.db.scalar(count_stmt) or 0
         stmt = (

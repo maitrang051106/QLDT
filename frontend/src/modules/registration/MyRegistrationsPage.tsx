@@ -193,6 +193,7 @@ export default function MyRegistrationsPage() {
                     <span>
                       Tuần {section.startWeek}-{section.endWeek}
                     </span>
+                    <span>GV: {section.lecturer.fullName}</span>
                   </div>
                 </div>
                 <Button

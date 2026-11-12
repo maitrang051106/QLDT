@@ -9,7 +9,7 @@ Tài liệu này hợp nhất đặc tả các ca sử dụng (`UC001–UC010`),
 | Vai trò (`Role`) | Mô tả & Quyền hạn chính |
 |---|---|
 | **Khách (Public)** | Xem danh mục môn học công khai tại `/catalog` (mã môn, tên môn, số tín chỉ, số lớp mở). |
-| **ADMIN** | Quản lý danh mục môn học và lớp học phần (`CRUD`), kiểm tra xung đột lịch toàn trường, cấu hình cột điểm cho từng lớp, xem danh sách sinh viên lớp, quản lý bảng đơn giá học phí, đợt nộp, phát hành hóa đơn và xem báo cáo thu học phí. |
+| **ADMIN** | Quản lý danh mục môn học và lớp học phần (`CRUD`), kiểm tra xung đột lịch toàn trường, cấu hình cột điểm cho từng lớp, xem danh sách sinh viên lớp, quản lý bảng đơn giá học phí, phát hành hóa đơn và xem báo cáo thu học phí. |
 | **LECTURER** | Xem lịch giảng dạy theo tuần, xem danh sách các lớp được phân công phụ trách, xem danh sách sinh viên lớp, điểm danh theo ngày học, nhập điểm thành phần và xuất báo cáo Excel (điểm danh & bảng điểm). |
 | **STUDENT** | Tra cứu lớp học phần, **Đăng ký lớp** theo giỏ hoặc trực tiếp, hủy đăng ký lớp, xem thời khóa biểu cá nhân theo tuần, xem hóa đơn học phí theo kỳ, thanh toán trực tuyến và tải biên lai điện tử PDF. |
 
@@ -29,7 +29,7 @@ Tài liệu này hợp nhất đặc tả các ca sử dụng (`UC001–UC010`),
 | **UC008** | Xem lịch giảng dạy giảng viên | `LECTURER` | Xem lịch dạy theo tuần và danh sách các lớp học phần được phân công giảng dạy trong kỳ `2026.1`. |
 | **UC009** | Xem danh sách SV của lớp (Giảng viên) | `LECTURER` | Giảng viên xem danh sách sinh viên của lớp do chính mình phụ trách (từ chối `403 FORBIDDEN` nếu truy cập lớp của giảng viên khác). |
 | **UC010** | Điểm danh, Bảng điểm & Xuất Excel | `LECTURER`, `ADMIN` | `ADMIN` cấu hình 1–10 cột điểm cho lớp (tổng trọng số = `100%`, khóa cấu hình khi đã có điểm). `LECTURER` phụ trách lớp điểm danh (`PRESENT`, `ABSENT`, `LATE`, `EXCUSED`) đúng ngày học trong lịch, nhập điểm từng cột và xuất file `.xlsx` gồm sheet Điểm danh & Bảng điểm. |
-| **Học phí** | Học phí & Biên lai điện tử | `STUDENT`, `ADMIN` | `ADMIN` cấu hình bảng đơn giá (`TUITION_RATES`) theo Khóa/Ngành, cấu hình các đợt nộp (`TUITION_INSTALLMENTS`) và phát hành hóa đơn (`TUITION_INVOICES`). `STUDENT` xem hóa đơn, nộp tiền trực tuyến chống trùng lặp (`idempotencyKey`) và tải biên lai PDF (`RECEIPTS`). |
+| **Học phí** | Học phí & Biên lai điện tử | `STUDENT`, `ADMIN` | `ADMIN` cấu hình bảng đơn giá (`TUITION_RATES`) theo Khóa/Ngành, phát hành hóa đơn (`TUITION_INVOICES`). `STUDENT` xem hóa đơn, thanh toán một lần toàn bộ số tiền phải nộp (chống trùng lặp bằng `idempotencyKey`), xem danh sách hóa đơn đã nộp và tải biên lai PDF (`RECEIPTS`). |
 
 ---
 
@@ -51,4 +51,4 @@ Tài liệu này hợp nhất đặc tả các ca sử dụng (`UC001–UC010`),
 5. **Quy tắc Tính điểm & Học phí**:
    - Điểm tổng kết lớp học phần chỉ được tính khi sinh viên đã có đủ điểm ở tất cả các cột điểm thành phần: quy đổi từng cột về thang 10 (`score / max_score * 10`), nhân trọng số (`weight_percentage / 100`), cộng tổng và làm tròn đến mức `0.5` gần nhất (`0.25` làm tròn lên `0.5`).
    - Học phí từng môn tính bằng `int(Decimal(tuition_credits) * Decimal(price_per_credit))` (làm tròn xuống đến đồng, tuyệt đối không dùng số thực dấu phẩy động `float`).
-   - Khi phân bổ số tiền phải nộp vào các đợt nộp theo tỷ lệ phần trăm, tổng các đợt phải bằng `100%` và phần dư làm tròn được dồn vào đợt cuối cùng.
+   - Học phí chỉ thanh toán **một lần** đúng bằng số còn phải nộp (`amount_due - amount_paid`); không chia đợt nộp và không nộp một phần.

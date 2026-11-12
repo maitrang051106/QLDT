@@ -1,21 +1,18 @@
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
 from app.core.error_codes import ErrorCode
 from app.core.exceptions import AppError, field_error
-from app.core.timeutil import now_vn, to_vn, today_vn
+from app.core.timeutil import now_vn, to_vn
 from app.dto.common import Page, PageParams
 from app.dto.tuition.tuition import (
     InvoiceGenerateRequest,
     InvoiceGenerateResult,
     PaymentCreateRequest,
     ReceiptDto,
-    TuitionInstallmentResponse,
-    TuitionInstallmentsPutRequest,
     TuitionInvoiceDto,
     TuitionInvoiceItemDto,
     TuitionPaymentDto,
@@ -29,7 +26,6 @@ from app.entity.auth.user import Role, User
 from app.entity.catalog.semester import Semester
 from app.entity.catalog.subject import Subject
 from app.entity.tuition.receipt import Receipt
-from app.entity.tuition.tuition_installment import TuitionInstallment
 from app.entity.tuition.tuition_invoice import InvoiceStatus, TuitionInvoice
 from app.entity.tuition.tuition_invoice_item import TuitionInvoiceItem
 from app.entity.tuition.tuition_payment import TuitionPayment
@@ -39,7 +35,6 @@ from app.repository.catalog.semester_repository import SemesterRepository
 from app.repository.tuition.tuition_repository import TuitionRepository
 from app.service.catalog.semester_service import SemesterService
 from app.service.tuition.tuition_calculator import (
-    calculate_installments,
     calculate_subject_tuition,
     resolve_tuition_rate,
 )
@@ -189,81 +184,6 @@ class TuitionService:
         self.repo.mark_invoices_stale(entity.semester_id)
         self.repo.delete_rate(entity)
         self.db.commit()
-
-    # ==================== TUITION INSTALLMENTS ====================
-    def list_installments(self, semester_id: int) -> list[TuitionInstallmentResponse]:
-        entities = self.repo.list_installments(semester_id)
-        return [
-            TuitionInstallmentResponse(
-                id=inst.id,
-                semester_id=inst.semester_id,
-                installment_order=inst.installment_order,
-                name=inst.name,
-                due_date=inst.due_date,
-                percentage=inst.percentage,
-                fixed_amount=inst.fixed_amount,
-            )
-            for inst in entities
-        ]
-
-    def configure_installments(
-        self, request: TuitionInstallmentsPutRequest
-    ) -> list[TuitionInstallmentResponse]:
-        semester = self.semesters.get_by_id(request.semester_id)
-        if semester is None:
-            raise AppError(
-                ErrorCode.NOT_FOUND, details=[field_error("semesterId", "Học kỳ không tồn tại")]
-            )
-
-        if self.repo.has_payments_for_semester(request.semester_id):
-            raise AppError(ErrorCode.INVOICE_HAS_PAYMENTS)
-
-        installment_orders = [item.installment_order for item in request.installments]
-        if len(installment_orders) != len(set(installment_orders)):
-            raise AppError(
-                ErrorCode.INSTALLMENT_SUM_MISMATCH,
-                details=[field_error("installments", "Thứ tự các đợt nộp không được trùng")],
-            )
-
-        has_percentage = [i.percentage for i in request.installments if i.percentage is not None]
-        has_fixed = [i.fixed_amount for i in request.installments if i.fixed_amount is not None]
-        if has_percentage and has_fixed:
-            raise AppError(
-                ErrorCode.INSTALLMENT_SUM_MISMATCH,
-                details=[
-                    field_error(
-                        "installments",
-                        "Các đợt trong cùng học kỳ phải dùng thống nhất tỷ lệ hoặc số tiền cố định",
-                    )
-                ],
-            )
-        if len(has_percentage) == len(request.installments) and len(request.installments) > 0:
-            total_pct = sum(has_percentage)
-            if total_pct != Decimal("100.00"):
-                raise AppError(
-                    ErrorCode.INSTALLMENT_SUM_MISMATCH,
-                    details=[
-                        field_error(
-                            "installments",
-                            f"Tổng tỷ lệ phần trăm các đợt phải bằng 100% (hiện tại: {total_pct}%)",
-                        )
-                    ],
-                )
-
-        new_entities = [
-            TuitionInstallment(
-                semester_id=request.semester_id,
-                installment_order=i.installment_order,
-                name=i.name,
-                due_date=i.due_date,
-                percentage=i.percentage,
-                fixed_amount=i.fixed_amount,
-            )
-            for i in request.installments
-        ]
-        self.repo.replace_installments(request.semester_id, new_entities)
-        self.db.commit()
-        return self.list_installments(request.semester_id)
 
     # ==================== INVOICE CALCULATION / GENERATION ====================
     def generate_single_invoice(
@@ -466,70 +386,9 @@ class TuitionService:
                 status="UNPAID",
                 is_stale=False,
                 items=[],
-                installments=[],
                 payments=[],
                 created_at=now_vn(),
                 updated_at=now_vn(),
-            )
-
-        installments = self.repo.list_installments(semester_id)
-        inst_specs = [
-            {
-                "id": inst.id,
-                "semesterId": inst.semester_id,
-                "installmentOrder": inst.installment_order,
-                "name": inst.name,
-                "dueDate": inst.due_date,
-                "percentage": inst.percentage,
-                "fixedAmount": inst.fixed_amount,
-            }
-            for inst in installments
-        ]
-        try:
-            calculated_insts = calculate_installments(invoice.amount_due, inst_specs)
-        except ValueError as exc:
-            raise AppError(
-                ErrorCode.INSTALLMENT_SUM_MISMATCH,
-                details=[field_error("installments", str(exc))],
-            ) from exc
-
-        today = today_vn()
-        lump_sum_paid = sum(
-            payment.amount for payment in invoice.payments if payment.installment_id is None
-        )
-        direct_paid = {
-            installment.id: sum(
-                payment.amount
-                for payment in invoice.payments
-                if payment.installment_id == installment.id
-            )
-            for installment in installments
-        }
-        installment_dtos: list[TuitionInstallmentResponse] = []
-        for c in calculated_insts:
-            alloc = c["allocatedAmount"]
-            paid_for_installment = direct_paid.get(c["id"], 0)
-            extra = min(lump_sum_paid, max(0, alloc - paid_for_installment))
-            lump_sum_paid -= extra
-            if paid_for_installment + extra >= alloc:
-                status = "PAID"
-            elif c["dueDate"] < today:
-                status = "OVERDUE"
-            else:
-                status = "PENDING"
-
-            installment_dtos.append(
-                TuitionInstallmentResponse(
-                    id=c["id"],
-                    semester_id=c["semesterId"],
-                    installment_order=c["installmentOrder"],
-                    name=c["name"],
-                    due_date=c["dueDate"],
-                    percentage=c["percentage"],
-                    fixed_amount=c["fixedAmount"],
-                    allocated_amount=alloc,
-                    status=status,
-                )
             )
 
         items_dtos = [
@@ -575,7 +434,6 @@ class TuitionService:
             status=invoice.status.value,
             is_stale=invoice.is_stale,
             items=items_dtos,
-            installments=installment_dtos,
             payments=payments_dtos,
             created_at=to_vn(invoice.created_at),
             updated_at=to_vn(invoice.updated_at),
@@ -607,80 +465,25 @@ class TuitionService:
         if invoice.status == InvoiceStatus.CANCELLED:
             raise AppError(ErrorCode.INVOICE_CANCELLED)
 
-        installment = None
-        if request.installment_id is not None:
-            installment = self.repo.get_installment_by_id(request.installment_id)
-            if installment is None or installment.semester_id != semester_id:
-                raise AppError(
-                    ErrorCode.VALIDATION_ERROR,
-                    details=[field_error("installmentId", "Đợt nộp không thuộc học kỳ hiện tại")],
-                )
-            installment_specs = [
-                {
-                    "id": item.id,
-                    "percentage": item.percentage,
-                    "fixedAmount": item.fixed_amount,
-                }
-                for item in self.repo.list_installments(semester_id)
-            ]
-            try:
-                installment_allocations = calculate_installments(
-                    invoice.amount_due, installment_specs
-                )
-            except ValueError as exc:
-                raise AppError(
-                    ErrorCode.INSTALLMENT_SUM_MISMATCH,
-                    details=[field_error("installments", str(exc))],
-                ) from exc
-            allocation = next(
-                (
-                    item["allocatedAmount"]
-                    for item in installment_allocations
-                    if item["id"] == installment.id
-                ),
-                None,
-            )
-            if allocation is None:
-                raise AppError(ErrorCode.VALIDATION_ERROR)
-            paid_for_installment = self.repo.paid_amount_for_installment(invoice.id, installment.id)
-            if request.amount > allocation - paid_for_installment:
-                raise AppError(
-                    ErrorCode.PAYMENT_EXCEEDS_BALANCE,
-                    details=[
-                        field_error(
-                            "amount",
-                            "Số tiền thanh toán vượt quá số còn thiếu của đợt đã chọn",
-                        )
-                    ],
-                )
-
-        balance = invoice.amount_due - invoice.amount_paid
-        if request.amount > balance:
+        # Thanh toán một lần: luôn nộp đúng toàn bộ số tiền còn phải nộp.
+        amount = invoice.amount_due - invoice.amount_paid
+        if amount <= 0:
             raise AppError(
-                ErrorCode.PAYMENT_EXCEEDS_BALANCE,
-                details=[
-                    field_error(
-                        "amount",
-                        f"Số tiền nộp ({request.amount:,} ₫) vượt quá số dư còn thiếu ({balance:,} ₫)",
-                    )
-                ],
+                ErrorCode.VALIDATION_ERROR,
+                details=[field_error("invoice", "Hóa đơn không có số tiền cần thanh toán")],
             )
 
         payment = TuitionPayment(
             invoice_id=invoice.id,
             student_id=student.id,
-            installment_id=request.installment_id,
-            amount=request.amount,
+            amount=amount,
             idempotency_key=request.idempotency_key,
             payment_method="SIMULATED",
         )
         self.repo.add_payment(payment)
 
-        invoice.amount_paid += request.amount
-        if invoice.amount_paid == invoice.amount_due:
-            invoice.status = InvoiceStatus.PAID
-        else:
-            invoice.status = InvoiceStatus.PARTIALLY_PAID
+        invoice.amount_paid += amount
+        invoice.status = InvoiceStatus.PAID
 
         semester = self.semesters.get_by_id(semester_id)
         semester_code = semester.semester_code if semester else "2026.1"
@@ -708,10 +511,10 @@ class TuitionService:
             "items": snapshot_items,
             "totalTuition": invoice.total_tuition,
             "amountDue": invoice.amount_due,
-            "paymentAmount": request.amount,
+            "paymentAmount": amount,
             "cumulativePaid": invoice.amount_paid,
             "balanceRemaining": max(0, invoice.amount_due - invoice.amount_paid),
-            "amountInWords": number_to_vietnamese_words(request.amount),
+            "amountInWords": number_to_vietnamese_words(amount),
             "paymentMethod": "Thanh toán giả lập",
         }
 
@@ -720,7 +523,7 @@ class TuitionService:
             payment=payment,
             student_id=student.id,
             invoice_id=invoice.id,
-            amount=request.amount,
+            amount=amount,
             receipt_data=receipt_data,
         )
         self.repo.add_receipt(receipt)
@@ -828,7 +631,6 @@ class TuitionService:
                 status=inv.status.value,
                 is_stale=inv.is_stale,
                 items=[],
-                installments=[],
                 payments=[],
                 created_at=to_vn(inv.created_at),
                 updated_at=to_vn(inv.updated_at),

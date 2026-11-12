@@ -8,7 +8,7 @@ Hệ thống vận hành tập trung trên **1 học kỳ đăng ký duy nhất 
 - **Đăng ký lớp** và hủy đăng ký an toàn đồng thời (kiểm soát giới hạn `12–24 TC`, khóa dòng chống vượt sĩ số).
 - Thời khóa biểu tuần cho sinh viên, giảng viên và lịch toàn trường cho Admin.
 - Điểm danh, cấu hình cột điểm, nhập bảng điểm và xuất báo cáo Excel theo lớp học phần.
-- Tính học phí theo tín chỉ học phí (TCHP), chia đợt nộp, thanh toán trực tuyến idempotent và phát hành biên lai PDF.
+- Tính học phí theo tín chỉ học phí (TCHP), thanh toán một lần trực tuyến idempotent và phát hành biên lai PDF.
 
 ---
 
@@ -43,7 +43,7 @@ docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot <
 docker compose exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot qldt < /tmp/seed.sql'
 ```
 
-> **Lưu ý**: Bộ dữ liệu chuẩn (`db/schema.sql` + `db/seed/seed.sql`) gồm 18 bảng, 1 học kỳ duy nhất (`2026.1`), 1 tài khoản Admin, 18 giảng viên (`gv001..gv018`, 0 xung đột lịch dạy), 1.000 sinh viên (`sv20210001..sv20211000`), 100 môn học, 30 phòng học và 400 lớp học phần. Dùng `alembic stamp head` sau khi nạp SQL chuẩn; không chạy chồng `alembic upgrade head` lên database vừa nạp từ `schema.sql`.
+> **Lưu ý**: Bộ dữ liệu chuẩn (`db/schema.sql` + `db/seed/seed.sql`) gồm 17 bảng, 1 học kỳ duy nhất (`2026.1`), 1 tài khoản Admin, 18 giảng viên (`gv001..gv018`, 0 xung đột lịch dạy), 1.000 sinh viên (`sv20210001..sv20211000`), 100 môn học, 30 phòng học và 400 lớp học phần. Dùng `alembic stamp head` sau khi nạp SQL chuẩn; không chạy chồng `alembic upgrade head` lên database vừa nạp từ `schema.sql`.
 
 ### Bước 2: Chạy Backend (`http://localhost:8000`)
 

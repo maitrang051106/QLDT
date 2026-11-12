@@ -33,7 +33,6 @@ TRUNCATE TABLE RECEIPTS;
 TRUNCATE TABLE TUITION_PAYMENTS;
 TRUNCATE TABLE TUITION_INVOICE_ITEMS;
 TRUNCATE TABLE TUITION_INVOICES;
-TRUNCATE TABLE TUITION_INSTALLMENTS;
 TRUNCATE TABLE TUITION_RATES;
 TRUNCATE TABLE RECEIPT_SEQUENCES;
 TRUNCATE TABLE STUDENT_GRADES;
@@ -2674,12 +2673,6 @@ UPDATE SUBJECTS SET tuition_credits = 5.0 WHERE subject_id = 4;
 INSERT INTO TUITION_RATES (rate_id, semester_id, cohort, major, effective_from, effective_to, price_per_credit, description) VALUES
   (1, 1, NULL, NULL, '2026-09-07', '2027-01-18', 450000, 'Đơn giá chuẩn học kỳ 2026.1 (dữ liệu giả)'),
   (2, 1, 'K66', 'Công nghệ thông tin', '2026-09-07', '2027-01-18', 500000, 'Đơn giá chương trình CNTT K66 (dữ liệu giả)');
-
--- Cấu hình 3 đợt nộp cho học kỳ 2026.1
-INSERT INTO TUITION_INSTALLMENTS (installment_id, semester_id, installment_order, name, due_date, percentage, fixed_amount) VALUES
-  (1, 1, 1, 'Đợt 1 - Tạm nộp đầu kỳ', '2026-10-15', 50.00, NULL),
-  (2, 1, 2, 'Đợt 2 - Quyết toán giữa kỳ', '2026-11-30', 30.00, NULL),
-  (3, 1, 3, 'Đợt 3 - Thu vét cuối kỳ', '2026-12-31', 20.00, NULL);
 
 -- Khởi tạo chuỗi biên lai cho học kỳ 2026.1
 INSERT INTO RECEIPT_SEQUENCES (semester_id, current_number) VALUES

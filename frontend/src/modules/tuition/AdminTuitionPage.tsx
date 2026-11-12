@@ -23,7 +23,6 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import type {
   InvoiceStatus,
-  TuitionInstallment,
   TuitionInvoice,
   TuitionRate,
   TuitionRateCreateRequest,
@@ -34,7 +33,6 @@ import {
   createTuitionRate,
   deleteTuitionRate,
   fetchAdminTuitionInvoices,
-  fetchTuitionInstallments,
   fetchTuitionRates,
   fetchTuitionSummary,
   generateTuitionInvoices,
@@ -94,12 +92,6 @@ export default function AdminTuitionPage() {
     queryKey: ["tuition", "rates", semesterId],
     enabled: semesterId !== undefined,
     queryFn: () => fetchTuitionRates(semesterId),
-  });
-
-  const installmentsQuery = useQuery({
-    queryKey: ["tuition", "installments", semesterId],
-    enabled: semesterId !== undefined,
-    queryFn: () => fetchTuitionInstallments(semesterId!),
   });
 
   const generateMutation = useMutation({
@@ -264,19 +256,6 @@ export default function AdminTuitionPage() {
     },
   ];
 
-  const installmentColumns: ColumnsType<TuitionInstallment> = [
-    { title: "Đợt", dataIndex: "installmentOrder", key: "installmentOrder", width: 80, align: "center" },
-    { title: "Tên đợt nộp", dataIndex: "name", key: "name" },
-    { title: "Hạn nộp", dataIndex: "dueDate", key: "dueDate", width: 150 },
-    {
-      title: "Tỷ lệ / Mức thu",
-      key: "basis",
-      width: 160,
-      render: (_, row) =>
-        row.percentage != null ? `${row.percentage}%` : formatVnd(row.fixedAmount ?? 0),
-    },
-  ];
-
   return (
     <div style={{ display: "grid", gap: 16 }}>
       <div className="feature-toolbar" style={{ justifyContent: "space-between" }}>
@@ -395,22 +374,6 @@ export default function AdminTuitionPage() {
                   dataSource={ratesQuery.data ?? []}
                   pagination={false}
                   scroll={{ x: 860 }}
-                />
-              </Card>
-            ),
-          },
-          {
-            key: "installments",
-            label: `Đợt nộp (${installmentsQuery.data?.length ?? 0})`,
-            children: (
-              <Card styles={{ body: { padding: 0 } }}>
-                <Table<TuitionInstallment>
-                  rowKey="id"
-                  size="small"
-                  loading={installmentsQuery.isLoading}
-                  columns={installmentColumns}
-                  dataSource={installmentsQuery.data ?? []}
-                  pagination={false}
                 />
               </Card>
             ),

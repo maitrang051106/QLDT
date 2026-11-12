@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { App, Alert, Button, Card, Checkbox, Empty, Input, Select, Spin, Table, Tag, message } from "antd";
 import {
   CalendarOutlined,
@@ -11,6 +11,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import api, { readApiError, requireItems } from "../../shared/api/client";
 import { useAuth } from "../auth/AuthContext";
+import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import type { Registration, Section, Semester } from "../../shared/api/api-types";
 import { fetchSections } from "./catalogApi";
 
@@ -63,6 +64,10 @@ export default function SectionCatalogPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [unitKeyword, setUnitKeyword] = useState("");
+  const [lecturerKeyword, setLecturerKeyword] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
+  const debouncedUnitKeyword = useDebouncedValue(unitKeyword);
+  const debouncedLecturerKeyword = useDebouncedValue(lecturerKeyword);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [shift, setShift] = useState<Shift>();
   const [hideConflicts, setHideConflicts] = useState(false);
@@ -101,15 +106,26 @@ export default function SectionCatalogPage() {
   }, [cart, cartHydrated, storageKey]);
 
   const sectionsQuery = useQuery({
-    queryKey: ["sections", semesterId, page, search, unitKeyword],
+    queryKey: [
+      "sections",
+      semesterId,
+      page,
+      debouncedSearch,
+      debouncedUnitKeyword,
+      debouncedLecturerKeyword,
+    ],
     enabled: semesterId !== undefined,
+    // Giữ danh sách cũ khi đổi trang/bộ lọc; sĩ số luôn được tải mới (staleTime 0).
+    placeholderData: keepPreviousData,
+    staleTime: 0,
     queryFn: () =>
       fetchSections({
         semesterId: semesterId!,
         page,
         size: pageSize,
-        keyword: search.trim() || undefined,
-        unitKeyword: unitKeyword.trim() || undefined,
+        keyword: debouncedSearch.trim() || undefined,
+        unitKeyword: debouncedUnitKeyword.trim() || undefined,
+        lecturerKeyword: debouncedLecturerKeyword.trim() || undefined,
       }),
   });
   const registrationsQuery = useQuery({
@@ -244,6 +260,7 @@ export default function SectionCatalogPage() {
   function resetFilters() {
     setSearch("");
     setUnitKeyword("");
+    setLecturerKeyword("");
     setSelectedDays([]);
     setShift(undefined);
     setHideConflicts(false);
@@ -356,6 +373,17 @@ export default function SectionCatalogPage() {
           value={unitKeyword}
           onChange={(event) => {
             setUnitKeyword(event.target.value);
+            setPage(1);
+          }}
+        />
+        <Input
+          allowClear
+          aria-label="Tìm giảng viên"
+          className="lecturer-search"
+          placeholder="Giảng viên (tên / mã GV)"
+          value={lecturerKeyword}
+          onChange={(event) => {
+            setLecturerKeyword(event.target.value);
             setPage(1);
           }}
         />
@@ -526,6 +554,7 @@ export default function SectionCatalogPage() {
                         <strong>{section.sectionCode}</strong>
                         <span>{section.subject.name}</span>
                         <small>{scheduleLabel(section)}</small>
+                        <small>GV: {section.lecturer.fullName}</small>
                       </div>
                       <div className="cart-item-actions">
                         <Button
@@ -616,6 +645,7 @@ export default function SectionCatalogPage() {
                     <small>
                       Tiết {section.startPeriod}–{section.endPeriod} · {section.room.roomCode}
                     </small>
+                    <small>GV: {section.lecturer.fullName}</small>
                     {conflict && <em>Trùng lịch</em>}
                   </article>
                 ))}

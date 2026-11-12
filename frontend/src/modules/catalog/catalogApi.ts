@@ -22,6 +22,7 @@ export async function fetchSections(params: {
   size: number;
   keyword?: string;
   unitKeyword?: string;
+  lecturerKeyword?: string;
 }): Promise<Page<Section>> {
   return (await api.get<Page<Section>>("/sections", { params })).data;
 }

@@ -1,6 +1,6 @@
 # Quy ước API FE–BE & Thiết kế Cơ sở dữ liệu
 
-Tài liệu này hợp nhất quy ước giao tiếp HTTP/JSON, bảng mã lỗi nghiệp vụ, ánh xạ tên trường và thiết kế lược đồ cơ sở dữ liệu MySQL (18 bảng). Nguồn schema máy đọc được cuối cùng là `contracts/openapi.yaml`, `contracts/api-types.ts` và `db/schema.sql`.
+Tài liệu này hợp nhất quy ước giao tiếp HTTP/JSON, bảng mã lỗi nghiệp vụ, ánh xạ tên trường và thiết kế lược đồ cơ sở dữ liệu MySQL (17 bảng). Nguồn schema máy đọc được cuối cùng là `contracts/openapi.yaml`, `contracts/api-types.ts` và `db/schema.sql`.
 
 ---
 
@@ -45,7 +45,6 @@ Mọi lỗi nghiệp vụ và xác thực đều trả về cùng cấu trúc `E
 |---|---:|---|
 | `VALIDATION_ERROR` | 400 | Dữ liệu đầu vào không hợp lệ; gắn `details[].field` vào từng ô nhập trên form. |
 | `INVALID_WEEK` | 400 | Tuần truy vấn nằm ngoài phạm vi `1..numWeeks` của học kỳ. |
-| `INSTALLMENT_SUM_MISMATCH` | 400 | Tổng tỷ lệ phần trăm các đợt nộp khác `100%` hoặc trộn lẫn phần trăm và số tiền cố định. |
 | `UNAUTHORIZED`, `TOKEN_EXPIRED` | 401 | Chưa đăng nhập hoặc token hết hạn; xóa phiên và chuyển về `/login`. |
 | `INVALID_CREDENTIALS` | 401 | Sai tên đăng nhập hoặc mật khẩu. |
 | `ACCOUNT_LOCKED` | 403 | Tài khoản đã bị khóa. |
@@ -67,8 +66,6 @@ Mọi lỗi nghiệp vụ và xác thực đều trả về cùng cấu trúc `E
 | `CREDIT_LIMIT_EXCEEDED` | 409 | Tổng số tín chỉ vượt quá mức tối đa (`24 TC`). |
 | `CREDIT_LIMIT_BELOW_MIN` | 409 | Không thể hủy lớp vì sẽ làm tổng tín chỉ tụt xuống dưới mức tối thiểu (`12 TC`). |
 | `INVOICE_ALREADY_PAID` | 409 | Hóa đơn đã được nộp đủ tiền. |
-| `PAYMENT_EXCEEDS_BALANCE` | 409 | Số tiền nộp vượt quá số dư còn nợ của hóa đơn hoặc của đợt nộp đã chọn. |
-| `INVOICE_HAS_PAYMENTS` | 409 | Đã có giao dịch thanh toán, không thể thay đổi cấu hình đợt nộp hoặc tính lại hóa đơn. |
 | `INVOICE_CANCELLED` | 409 | Hóa đơn đã bị hủy, không nhận thanh toán. |
 | `INTERNAL_ERROR` | 500 | Lỗi hệ thống ngoài dự kiến; hiển thị thông báo thân thiện, không lộ chi tiết kỹ thuật. |
 
@@ -87,11 +84,11 @@ Mọi lỗi nghiệp vụ và xác thực đều trả về cùng cấu trúc `E
 | **Timetable** | `GET /api/students/me/timetable`, `GET /api/lecturers/me/timetable`, `GET /api/lecturers/me/sections`, `POST /api/timetable/check` | `STUDENT` / `LECTURER` / Đã đăng nhập | Xem thời khóa biểu theo tuần và kiểm tra xung đột lịch học. |
 | **Academic (UC010)** | `GET/PUT /api/sections/{id}/attendance`, `GET/PUT /api/sections/{id}/grades`, `GET/PUT /api/sections/{id}/grade-components`, `GET /api/sections/{id}/exports/{attendance,grades}` | `LECTURER` phụ trách / `ADMIN` (cấu hình cột điểm) | Điểm danh theo ngày học, cấu hình cột điểm, nhập bảng điểm và xuất báo cáo Excel (`.xlsx`). |
 | **Tuition** | `GET /api/tuition/me`, `POST /api/tuition/me/payments`, `GET /api/receipts/me`, `GET /api/receipts/{id}`, `GET /api/receipts/{id}/pdf` | `STUDENT` (`ADMIN` xem được biên lai) | Sinh viên xem hóa đơn, nộp học phí idempotent và xem/tải biên lai điện tử PDF. |
-| **Tuition Admin** | `GET/POST/PUT/DELETE /api/admin/tuition-rates`, `GET/PUT /api/admin/tuition/installments`, `POST /api/admin/tuition/invoices/generate`, `GET /api/admin/tuition/invoices`, `GET /api/admin/tuition/reports/summary` | `ADMIN` | Quản lý bảng đơn giá, cấu hình đợt nộp, phát hành hóa đơn hàng loạt và xem báo cáo tổng hợp. |
+| **Tuition Admin** | `GET/POST/PUT/DELETE /api/admin/tuition-rates`, `POST /api/admin/tuition/invoices/generate`, `GET /api/admin/tuition/invoices`, `GET /api/admin/tuition/reports/summary` | `ADMIN` | Quản lý bảng đơn giá, phát hành hóa đơn hàng loạt và xem báo cáo tổng hợp. |
 
 ---
 
-## 4. Thiết kế Cơ sở Dữ liệu (`db/schema.sql` – 18 bảng)
+## 4. Thiết kế Cơ sở Dữ liệu (`db/schema.sql` – 17 bảng)
 
 Toàn bộ khóa ngoại sử dụng `ON UPDATE CASCADE ON DELETE RESTRICT`. Tên bảng và cột dùng `UPPER_SNAKE_CASE`.
 
@@ -110,11 +107,10 @@ Toàn bộ khóa ngoại sử dụng `ON UPDATE CASCADE ON DELETE RESTRICT`. Tê
 10. `SECTION_GRADE_COMPONENTS`: Cấu hình cột điểm của lớp (`component_id`, `section_id`, `name`, `weight_percentage`, `max_score`, `sort_order`).
 11. `STUDENT_GRADES`: Điểm từng cột của sinh viên (`grade_id`, `component_id`, `student_id`, `score`, `updated_by_user_id`; duy nhất theo `(component_id, student_id)`).
 
-### Nhóm 3: Học phí & Biên lai Điện tử (7 bảng)
+### Nhóm 3: Học phí & Biên lai Điện tử (6 bảng)
 12. `TUITION_RATES`: Bảng đơn giá 1 TCHP theo học kỳ, khóa, ngành và khoảng ngày hiệu lực (`rate_id`, `semester_id`, `cohort`, `major`, `effective_from`, `effective_to`, `price_per_credit`).
-13. `TUITION_INSTALLMENTS`: Cấu hình các đợt nộp trong học kỳ (`installment_id`, `semester_id`, `installment_order`, `name`, `due_date`, `percentage`, `fixed_amount`).
-14. `TUITION_INVOICES`: Hóa đơn học phí của sinh viên theo kỳ (`invoice_id`, `student_id`, `semester_id`, `total_tuition`, `amount_due`, `amount_paid`, `status` [`UNPAID`/`PARTIALLY_PAID`/`PAID`/`CANCELLED`], `is_stale`).
-15. `TUITION_INVOICE_ITEMS`: Snapshot chi tiết từng môn học trong hóa đơn (`item_id`, `invoice_id`, `subject_id`, `subject_code`, `subject_name`, `credits`, `tuition_credits`, `price_per_credit`, `amount`).
-16. `TUITION_PAYMENTS`: Giao dịch nộp học phí (`payment_id`, `invoice_id`, `student_id`, `installment_id`, `amount`, `idempotency_key`, `payment_method`, `paid_at`; duy nhất theo `(student_id, idempotency_key)`).
-17. `RECEIPTS`: Biên lai điện tử phát hành cho mỗi lần thanh toán (`receipt_id`, `receipt_no`, `payment_id`, `student_id`, `invoice_id`, `amount`, `issued_at`, `receipt_data` JSON bất biến).
-18. `RECEIPT_SEQUENCES`: Bộ đếm cấp số biên lai tuần tự theo học kỳ (`semester_id`, `current_number`).
+13. `TUITION_INVOICES`: Hóa đơn học phí của sinh viên theo kỳ (`invoice_id`, `student_id`, `semester_id`, `total_tuition`, `amount_due`, `amount_paid`, `status` [`UNPAID`/`PARTIALLY_PAID`/`PAID`/`CANCELLED`], `is_stale`).
+14. `TUITION_INVOICE_ITEMS`: Snapshot chi tiết từng môn học trong hóa đơn (`item_id`, `invoice_id`, `subject_id`, `subject_code`, `subject_name`, `credits`, `tuition_credits`, `price_per_credit`, `amount`).
+15. `TUITION_PAYMENTS`: Giao dịch nộp học phí (`payment_id`, `invoice_id`, `student_id`, `amount`, `idempotency_key`, `payment_method`, `paid_at`; duy nhất theo `(student_id, idempotency_key)`).
+16. `RECEIPTS`: Biên lai điện tử phát hành cho mỗi lần thanh toán (`receipt_id`, `receipt_no`, `payment_id`, `student_id`, `invoice_id`, `amount`, `issued_at`, `receipt_data` JSON bất biến).
+17. `RECEIPT_SEQUENCES`: Bộ đếm cấp số biên lai tuần tự theo học kỳ (`semester_id`, `current_number`).

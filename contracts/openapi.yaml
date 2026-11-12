@@ -590,6 +590,14 @@ paths:
           - type: string
           - type: 'null'
           title: Unitkeyword
+      - name: lecturerKeyword
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lecturerkeyword
       - name: page
         in: query
         required: false
@@ -2267,121 +2275,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /api/admin/tuition/installments:
-    get:
-      tags:
-      - tuition-admin
-      summary: List Tuition Installments
-      operationId: list_tuition_installments_api_admin_tuition_installments_get
-      security:
-      - HTTPBearer: []
-      parameters:
-      - name: semesterId
-        in: query
-        required: true
-        schema:
-          type: integer
-          minimum: 1
-          title: Semesterid
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ItemList_TuitionInstallmentResponse_'
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-    put:
-      tags:
-      - tuition-admin
-      summary: Configure Tuition Installments
-      operationId: configure_tuition_installments_api_admin_tuition_installments_put
-      security:
-      - HTTPBearer: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TuitionInstallmentsPutRequest'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ItemList_TuitionInstallmentResponse_'
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Bad Request
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Unauthorized
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Forbidden
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Not Found
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-          description: Conflict
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
   /api/admin/tuition/invoices/generate:
     post:
       tags:
@@ -3217,17 +3110,6 @@ components:
       required:
       - items
       title: ItemList[Semester]
-    ItemList_TuitionInstallmentResponse_:
-      properties:
-        items:
-          items:
-            $ref: '#/components/schemas/TuitionInstallmentResponse'
-          type: array
-          title: Items
-      type: object
-      required:
-      - items
-      title: ItemList[TuitionInstallmentResponse]
     ItemList_TuitionRateResponse_:
       properties:
         items:
@@ -3386,15 +3268,6 @@ components:
       title: Page[TuitionInvoiceDto]
     PaymentCreateRequest:
       properties:
-        installmentId:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Installmentid
-        amount:
-          type: integer
-          exclusiveMinimum: 0.0
-          title: Amount
         idempotencyKey:
           type: string
           maxLength: 64
@@ -3402,7 +3275,6 @@ components:
           title: Idempotencykey
       type: object
       required:
-      - amount
       - idempotencyKey
       title: PaymentCreateRequest
     ReceiptDto:
@@ -4112,101 +3984,6 @@ components:
       - startWeek
       - endWeek
       title: TimetableItem
-    TuitionInstallmentConfig:
-      properties:
-        installmentOrder:
-          type: integer
-          exclusiveMinimum: 0.0
-          title: Installmentorder
-        name:
-          type: string
-          minLength: 1
-          title: Name
-        dueDate:
-          type: string
-          format: date
-          title: Duedate
-        percentage:
-          anyOf:
-          - type: number
-            maximum: 100.0
-            minimum: 0.0
-          - type: string
-          - type: 'null'
-          title: Percentage
-        fixedAmount:
-          anyOf:
-          - type: integer
-            minimum: 0.0
-          - type: 'null'
-          title: Fixedamount
-      type: object
-      required:
-      - installmentOrder
-      - name
-      - dueDate
-      title: TuitionInstallmentConfig
-    TuitionInstallmentResponse:
-      properties:
-        id:
-          type: integer
-          title: Id
-        semesterId:
-          type: integer
-          title: Semesterid
-        installmentOrder:
-          type: integer
-          title: Installmentorder
-        name:
-          type: string
-          title: Name
-        dueDate:
-          type: string
-          format: date
-          title: Duedate
-        percentage:
-          anyOf:
-          - type: number
-          - type: 'null'
-          title: Percentage
-        fixedAmount:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Fixedamount
-        allocatedAmount:
-          anyOf:
-          - type: integer
-          - type: 'null'
-          title: Allocatedamount
-        status:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Status
-      type: object
-      required:
-      - id
-      - semesterId
-      - installmentOrder
-      - name
-      - dueDate
-      title: TuitionInstallmentResponse
-    TuitionInstallmentsPutRequest:
-      properties:
-        semesterId:
-          type: integer
-          title: Semesterid
-        installments:
-          items:
-            $ref: '#/components/schemas/TuitionInstallmentConfig'
-          type: array
-          title: Installments
-      type: object
-      required:
-      - semesterId
-      - installments
-      title: TuitionInstallmentsPutRequest
     TuitionInvoiceDto:
       properties:
         id:
@@ -4266,11 +4043,6 @@ components:
             $ref: '#/components/schemas/TuitionInvoiceItemDto'
           type: array
           title: Items
-        installments:
-          items:
-            $ref: '#/components/schemas/TuitionInstallmentResponse'
-          type: array
-          title: Installments
         payments:
           items:
             $ref: '#/components/schemas/TuitionPaymentDto'

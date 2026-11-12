@@ -2,17 +2,20 @@ import { useState } from "react";
 import { BookOutlined, CloseOutlined, InfoCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import { Alert, Button, Empty, Input, Modal, Spin, Table, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { Subject } from "../../shared/api/api-types";
+import { useDebouncedValue } from "../../shared/hooks/useDebouncedValue";
 import { fetchSubjects } from "./catalogApi";
 
 export default function CourseCatalogPage() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
   const [page, setPage] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState<Subject | null>(null);
   const subjectsQuery = useQuery({
-    queryKey: ["catalog", "subjects", page, search],
-    queryFn: () => fetchSubjects({ page, size: 10, keyword: search.trim() || undefined }),
+    queryKey: ["catalog", "subjects", page, debouncedSearch],
+    placeholderData: keepPreviousData,
+    queryFn: () => fetchSubjects({ page, size: 10, keyword: debouncedSearch.trim() || undefined }),
   });
 
   const columns: ColumnsType<Subject> = [

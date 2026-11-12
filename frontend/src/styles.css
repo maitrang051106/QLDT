@@ -143,6 +143,7 @@ button, input { font: inherit; }
 .semester-select { width: min(100%, 310px); }
 .section-search { width: min(100%, 340px); }
 .unit-search { width: min(100%, 220px); }
+.lecturer-search { width: min(100%, 220px); }
 .day-filter { width: min(100%, 190px); }
 .shift-filter { width: min(100%, 190px); }
 .registration-filter-toolbar { align-items: stretch; }

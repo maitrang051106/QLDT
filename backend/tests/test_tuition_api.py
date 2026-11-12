@@ -12,7 +12,6 @@ from app.entity.catalog.semester import Semester
 from app.entity.catalog.subject import Subject
 from app.entity.registration.registration import Registration
 from app.entity.tuition.receipt import Receipt
-from app.entity.tuition.tuition_installment import TuitionInstallment
 from app.entity.tuition.tuition_payment import TuitionPayment
 from app.entity.tuition.tuition_rate import TuitionRate
 from app.security.password import hash_password
@@ -63,21 +62,7 @@ def _tuition_world(db_session):
         effective_to=semester.end_date,
         price_per_credit=10000,
     )
-    first_installment = TuitionInstallment(
-        semester_id=semester.id,
-        installment_order=1,
-        name="Đợt 1",
-        due_date=date(2026, 10, 1),
-        percentage=Decimal("50"),
-    )
-    second_installment = TuitionInstallment(
-        semester_id=semester.id,
-        installment_order=2,
-        name="Đợt 2",
-        due_date=date(2026, 12, 1),
-        percentage=Decimal("50"),
-    )
-    db_session.add_all([section, rate, first_installment, second_installment])
+    db_session.add_all([section, rate])
     db_session.flush()
     db_session.add(Registration(student_id=student.id, section_id=section.id))
     db_session.commit()
@@ -86,8 +71,6 @@ def _tuition_world(db_session):
         "student": student,
         "rate": rate,
         "subject": subject,
-        "first_installment": first_installment,
-        "second_installment": second_installment,
     }
 
 
@@ -101,11 +84,7 @@ def test_student_payment_is_idempotent_and_receipt_pdf_is_available(client, db_s
     assert invoice_response.json()["totalTuition"] == 15000
     assert invoice_response.json()["items"][0]["tuitionCredits"] == 1.5
 
-    payment_body = {
-        "installmentId": world["first_installment"].id,
-        "amount": 7500,
-        "idempotencyKey": "tuition-payment-key-1",
-    }
+    payment_body = {"idempotencyKey": "tuition-payment-key-1"}
     payment_response = client.post(
         "/api/tuition/me/payments", json=payment_body, headers=student_headers
     )
@@ -130,6 +109,16 @@ def test_student_payment_is_idempotent_and_receipt_pdf_is_available(client, db_s
     assert receipts.status_code == 200
     assert [item["id"] for item in receipts.json()["items"]] == [receipt["id"]]
 
+    # Thanh toán một lần: nộp đúng toàn bộ số phải nộp, hóa đơn chuyển sang PAID.
+    assert receipt["amount"] == 15000
+    paid_invoice = client.get(
+        f"/api/tuition/me?semesterId={world['semester'].id}", headers=student_headers
+    ).json()
+    assert paid_invoice["status"] == "PAID"
+    assert paid_invoice["balance"] == 0
+    assert paid_invoice["amountPaid"] == 15000
+    assert "installments" not in paid_invoice
+
 
 def test_tuition_permissions_and_payment_limits(client, db_session):
     world = _tuition_world(db_session)
@@ -137,26 +126,15 @@ def test_tuition_permissions_and_payment_limits(client, db_session):
     admin_headers = login(client, "admin", "Admin@123")
     lecturer_headers = login(client, "gv1", "Gv@12345")
 
-    invoice = client.get(
-        f"/api/tuition/me?semesterId={world['semester'].id}", headers=student_headers
-    ).json()
-    excessive = client.post(
-        "/api/tuition/me/payments",
-        json={"amount": invoice["balance"] + 1, "idempotencyKey": "too-much"},
-        headers=student_headers,
-    )
-    assert excessive.status_code == 409
-    assert excessive.json()["error"] == "PAYMENT_EXCEEDS_BALANCE"
-
     paid = client.post(
         "/api/tuition/me/payments",
-        json={"amount": invoice["balance"], "idempotencyKey": "pay-full"},
+        json={"idempotencyKey": "pay-full"},
         headers=student_headers,
     )
     assert paid.status_code == 201
     after_paid = client.post(
         "/api/tuition/me/payments",
-        json={"amount": 1, "idempotencyKey": "pay-again"},
+        json={"idempotencyKey": "pay-again"},
         headers=student_headers,
     )
     assert after_paid.status_code == 409
@@ -196,39 +174,6 @@ def test_tuition_permissions_and_payment_limits(client, db_session):
     )
 
 
-def test_installment_reconfiguration_after_payment_blocked(client, db_session):
-    world = _tuition_world(db_session)
-    admin_headers = login(client, "admin", "Admin@123")
-    student_headers = login(client, "sv1", "Sv@12345")
-
-    invoice = client.get(
-        f"/api/tuition/me?semesterId={world['semester'].id}", headers=student_headers
-    ).json()
-    payment = client.post(
-        "/api/tuition/me/payments",
-        json={"amount": invoice["balance"], "idempotencyKey": "paid-before-reconfigure"},
-        headers=student_headers,
-    )
-    assert payment.status_code == 201
-    reconfigure = client.put(
-        "/api/admin/tuition/installments",
-        json={
-            "semesterId": world["semester"].id,
-            "installments": [
-                {
-                    "installmentOrder": 1,
-                    "name": "Đợt duy nhất",
-                    "dueDate": "2026-12-01",
-                    "percentage": 100,
-                }
-            ],
-        },
-        headers=admin_headers,
-    )
-    assert reconfigure.status_code == 409
-    assert reconfigure.json()["error"] == "INVOICE_HAS_PAYMENTS"
-
-
 def test_admin_tuition_configuration_generation_and_reporting(client, db_session):
     world = _tuition_world(db_session)
     admin_headers = login(client, "admin", "Admin@123")
@@ -252,30 +197,6 @@ def test_admin_tuition_configuration_generation_and_reporting(client, db_session
     )
     assert duplicate_rate.status_code == 409
     assert duplicate_rate.json()["error"] == "DUPLICATE_CODE"
-
-    duplicate_installments = client.put(
-        "/api/admin/tuition/installments",
-        headers=admin_headers,
-        json={
-            "semesterId": world["semester"].id,
-            "installments": [
-                {
-                    "installmentOrder": 1,
-                    "name": "Đợt A",
-                    "dueDate": "2026-10-01",
-                    "percentage": 50,
-                },
-                {
-                    "installmentOrder": 1,
-                    "name": "Đợt B",
-                    "dueDate": "2026-12-01",
-                    "percentage": 50,
-                },
-            ],
-        },
-    )
-    assert duplicate_installments.status_code == 400
-    assert duplicate_installments.json()["error"] == "INSTALLMENT_SUM_MISMATCH"
 
     generated = client.post(
         "/api/admin/tuition/invoices/generate",
