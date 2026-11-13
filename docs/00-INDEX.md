@@ -10,6 +10,8 @@
 | Phát triển & Kiểm thử Backend | [../backend/CLAUDE.md](../backend/CLAUDE.md), [api-and-database.md](api-and-database.md) |
 | Phát triển & Tích hợp Frontend | [../frontend/CLAUDE.md](../frontend/CLAUDE.md), [api-and-database.md](api-and-database.md) |
 | Truy vết tính năng, Tiến độ & Kịch bản kiểm thử | [traceability-and-testing.md](traceability-and-testing.md) |
+| Kết quả UAT & Nhật ký lỗi | [uat-report.md](uat-report.md), [bug-log.md](bug-log.md) |
+| Hướng dẫn sử dụng cho người dùng cuối | [huong-dan-su-dung.md](huong-dan-su-dung.md) |
 | Cài đặt môi trường, Docker, Gateway & CI/CD | [../README.md](../README.md), [../gateway/README.md](../gateway/README.md), `../docker-compose.yml` |
 
 ## Thứ tự ưu tiên của nguồn chuẩn

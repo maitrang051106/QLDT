@@ -126,6 +126,12 @@ def test_tuition_permissions_and_payment_limits(client, db_session):
     admin_headers = login(client, "admin", "Admin@123")
     lecturer_headers = login(client, "gv1", "Gv@12345")
 
+    invoice = client.get(
+        f"/api/tuition/me?semesterId={world['semester'].id}", headers=student_headers
+    )
+    assert invoice.status_code == 200
+    assert invoice.json()["balance"] == 15000
+
     paid = client.post(
         "/api/tuition/me/payments",
         json={"idempotencyKey": "pay-full"},
