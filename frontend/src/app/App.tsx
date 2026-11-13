@@ -192,6 +192,20 @@ function AccessDenied() {
   );
 }
 
+function NotFoundPage() {
+  const navigate = useNavigate();
+
+  return (
+    <main className="not-found" role="alert">
+      <p className="eyebrow">404 · KHÔNG TÌM THẤY TRANG</p>
+      <h1>Đường dẫn bạn truy cập không tồn tại.</h1>
+      <Button type="primary" onClick={() => navigate("/login")}>
+        Về trang đăng nhập
+      </Button>
+    </main>
+  );
+}
+
 function ProtectedApp() {
   const { user, loading, authError, logout } = useAuth();
   const location = useLocation();
@@ -348,8 +362,8 @@ function AppRoutes() {
         }
       />
       <Route path="/app/*" element={<ProtectedApp />} />
-      <Route path="/" element={<Navigate to="/courses" replace />} />
-      <Route path="*" element={<Navigate to="/courses" replace />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
