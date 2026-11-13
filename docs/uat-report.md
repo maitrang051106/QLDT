@@ -8,7 +8,7 @@
 | Môi trường | Docker Compose đầy đủ (frontend + backend + MySQL + Nginx gateway), chạy tại `http://localhost:8080` |
 | Phiên bản dữ liệu | `db/schema.sql` + `db/seed/seed.sql` (17 bảng), migration Alembic `b7e2d41c8a90` |
 | Học kỳ kiểm thử | `2026.1` (bắt đầu 2026-09-07, 20 tuần, tuần hiện tại = 10) |
-| Phương pháp | UAT API end-to-end bằng script/httpx, kết hợp bộ kiểm thử hồi quy pytest; UAT giao diện bằng trình duyệt thật cho 3 vai trò ADMIN, LECTURER, STUDENT |
+| Phương pháp | UAT API end-to-end bằng script `tests/uat/uat_api.py` (httpx), kết hợp bộ kiểm thử hồi quy pytest; UAT giao diện bằng trình duyệt thật cho 3 vai trò ADMIN, LECTURER, STUDENT |
 | Phạm vi | UC001–UC010: đăng nhập/phân quyền, danh mục môn học, lớp học phần, đăng ký lớp, thời khóa biểu, điểm danh, bảng điểm, học phí và biên lai |
 
 ## 2. Môi trường và dữ liệu kiểm thử
